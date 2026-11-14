@@ -1,0 +1,116 @@
+# marketlab default configuration.
+#
+# Point-in-time rule used everywhere: a "decision" is made with information known at the end of
+# trading day t and is executed at the close of trading day t + execution_lag. Every series below
+# carries the delay with which it really becomes available, so the model never sees a number
+# before a person fetching the same free sources could have seen it.
+
+project:
+  start: "2004-01-01"        # first date kept in the feature panel
+  target: NASDAQ100          # FRED id of the traded index (close only)
+  wiki_start: "2003-01"      # first Current Events month to download
+
+# ---------------------------------------------------------------------------------------------
+# FRED series. lag = delay between the observation date and availability:
+#   freq d: lag in business days after the observation date
+#   freq w / c: lag in calendar days after the observation date
+#   freq m: lag in calendar days after the END of the reference month
+# ---------------------------------------------------------------------------------------------
+fred:
+  # equity indices (close)
+  NASDAQ100:     {freq: d, lag: 0}
+  NASDAQCOM:     {freq: d, lag: 0}
+  SP500:         {freq: d, lag: 0}     # FRED only carries the last 10 years
+  # implied volatility
+  VIXCLS:        {freq: d, lag: 1}
+  VXNCLS:        {freq: d, lag: 1}
+  # rates and inflation compensation (H.15)
+  DGS3MO:        {freq: d, lag: 1}
+  DGS2:          {freq: d, lag: 1}
+  DGS10:         {freq: d, lag: 1}
+  DGS30:         {freq: d, lag: 1}
+  DFF:           {freq: d, lag: 1}
+  DFII10:        {freq: d, lag: 1}
+  T10YIE:        {freq: d, lag: 1}
+  T5YIFR:        {freq: d, lag: 1}
+  # credit
+  BAA10Y:        {freq: d, lag: 1}
+  AAA10Y:        {freq: d, lag: 1}
+  # currencies and oil (published weekly)
+  DEXUSEU:       {freq: d, lag: 6}
+  DEXJPUS:       {freq: d, lag: 6}
+  DCOILWTICO:    {freq: d, lag: 6}
+  # financial conditions / liquidity
+  NFCI:          {freq: w, lag: 6}
+  STLFSI4:       {freq: w, lag: 7}
+  WALCL:         {freq: w, lag: 2}
+  ICSA:          {freq: w, lag: 6}
+  # newspaper-based uncertainty (daily)
+  USEPUINDXD:    {freq: c, lag: 3}     # c = calendar-day series, lag in calendar days
+  WLEMUINDXD:    {freq: c, lag: 3}
+  # monthly macro (lag counted from the end of the reference month)
+  UNRATE:        {freq: m, lag: 10}
+  SAHMREALTIME:  {freq: m, lag: 10}
+  CPIAUCNS:      {freq: m, lag: 20}
+  INDPRO:        {freq: m, lag: 20}
+  PERMIT:        {freq: m, lag: 27}
+  UMCSENT:       {freq: m, lag: 35}
+  MICH:          {freq: m, lag: 35}
+  EXPINF1YR:     {freq: m, lag: 5}
+  EXPINF10YR:    {freq: m, lag: 5}
+
+# Other sources. lag_days = calendar days between an observation and its availability.
+sources:
+  news_sentiment:
+    url: "https://www.frbsf.org/wp-content/uploads/news_sentiment_data.xlsx"
+    lag_days: 12            # file is refreshed weekly
+  gpr:
+    url: "https://www.matteoiacoviello.com/gpr_files/data_gpr_daily_recent.xls"
+    lag_days: 35            # file is refreshed roughly monthly
+  spf:
+    url: "https://www.philadelphiafed.org/-/media/frbp/assets/surveys-and-data/survey-of-professional-forecasters/historical-data/meanlevel.xlsx"
+    # a survey for quarter Q is treated as known from the last day of Q's middle month
+  fomc:
+    calendar_url: "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+    historical_url: "https://www.federalreserve.gov/monetarypolicy/fomchistorical{year}.htm"
+    historical_years: [2003, 2020]
+  wiki:
+    url: "https://en.wikipedia.org/w/index.php?title=Portal:Current_events/{month}_{year}&action=render"
+    lag_rows: 1             # extra trading day so the day's page has time to be filled in
+
+# ---------------------------------------------------------------------------------------------
+# Model
+# ---------------------------------------------------------------------------------------------
+model:
+  window: 60                 # trading days of history the CNN sees
+  horizons: [1, 5, 20]       # forecast horizons in trading days (multi-task)
+  trade_horizon: 5           # horizon used for trading decisions
+  execution_lag: 1           # decisions made after close t are executed at close t+1
+  hidden: 16                 # conv channels per branch
+  dropout: 0.25
+  epochs: 14
+  batch_size: 128
+  lr: 0.001
+  weight_decay: 0.02
+  seeds: [11, 23, 37, 51, 73]
+  clip_sigma: 5.0            # winsorise standardised inputs
+  reference_window: 250      # days of a model's own predictions used as its yardstick
+  reg_weight: 0.5            # weight of the regression loss next to the direction loss
+
+walkforward:
+  first_test_year: 2012      # everything before is the first training window
+  dev_end_year: 2018         # test years up to here may be used to tune; later years are holdout
+
+# ---------------------------------------------------------------------------------------------
+# Trading simulation (virtual money)
+# ---------------------------------------------------------------------------------------------
+trading:
+  initial_cash: 100000.0
+  cost_bps: 5.0              # one-way cost (commission + slippage) in basis points of trade value
+  max_weight: 1.0            # 1.0 = no leverage
+  allow_short: false
+  sizing: relative           # relative | absolute (see marketlab/trading/strategy.py)
+  gain: 1.0                  # how strongly the position reacts to the signal
+  rebalance_band: 0.10       # do not trade unless the target weight moves by more than this
+  signal_smooth: 3           # average the signal over this many days
+  cash_rate_series: DGS3MO   # interest earned on idle cash
