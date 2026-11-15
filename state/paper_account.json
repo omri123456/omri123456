@@ -1,0 +1,33 @@
+{
+ "opened_on": "2026-11-13",
+ "instrument": "NASDAQ100",
+ "initial_cash": 100000.0,
+ "broker": {
+  "cash": 100000.0,
+  "cost_bps": 5.0,
+  "borrow_spread": 1.0,
+  "units": 0.0,
+  "last_price": 27943.74,
+  "last_date": "2026-11-13",
+  "trades": [],
+  "costs_paid": 0.0,
+  "interest_earned": 0.0
+ },
+ "pending": {
+  "decided_on": "2026-11-13",
+  "target_weight": 1.0,
+  "p_up": 0.6157,
+  "horizon": 5
+ },
+ "history": [
+  {
+   "date": "2026-11-13",
+   "equity": 100000.0,
+   "weight": 0.0,
+   "price": 27943.74,
+   "cash": 100000.0,
+   "traded": false
+  }
+ ],
+ "processed_days": 0
+}
