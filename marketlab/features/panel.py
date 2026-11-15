@@ -15,13 +15,14 @@ import numpy as np
 import pandas as pd
 
 from ..data.store import RawData
-from . import text
+from . import rules, text
 from .align import (align_available, align_daily, available_dates, bucket_to_calendar, log_safe,
                     surprise, zscore)
 
 log = logging.getLogger(__name__)
 
 GROUPS = ["market", "rates", "cross", "liquidity", "macro", "forecasts", "news_idx", "wiki", "calendar"]
+EXTRA_GROUPS = ["rules"]  # classic trading-rule signals: only used by model variants that ask for them
 ANNUAL = np.sqrt(252.0)
 
 
@@ -334,6 +335,11 @@ def build_panel(raw: RawData, cfg: dict) -> PanelBundle:
 
     # ------------------------------------------------------------------ calendar
     _calendar_features(b, raw)
+
+    # ------------------------------------------------------------------ classic trading rules
+    signals = rules.rule_signals(price)
+    for col in signals.columns:
+        b.add(f"rule_{col}", signals[col], "rules")
 
     panel = pd.DataFrame(b.columns, index=calendar)
     start = pd.Timestamp(cfg["project"]["start"])

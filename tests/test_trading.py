@@ -98,3 +98,19 @@ def test_metrics_basics():
     perf = metrics.performance(equity)
     assert np.isclose(perf["total_return"], 1.0004 ** 252 - 1)
     assert perf["max_drawdown"] == 0.0
+
+
+def test_classic_rules_are_bounded_and_behave_on_simple_paths():
+    from marketlab.features.rules import RULES, rule_signals
+    dates = pd.bdate_range("2015-01-01", periods=600)
+    rising = pd.Series(np.exp(np.linspace(0, 1, 600)), index=dates)
+    up = rule_signals(rising)
+    assert list(up.columns) == list(RULES)
+    assert up.min().min() >= 0.0 and up.max().max() <= 1.0
+    last = up.iloc[-1]
+    assert last["trend_200d"] == 1 and last["ma_cross_50_200"] == 1 and last["momentum_12m"] == 1
+    assert last["breakout_55_20"] == 1 and last["bollinger_reversion"] == 0
+    down = rule_signals(rising[::-1].set_axis(dates)).iloc[-1]
+    assert down["trend_200d"] == 0 and down["momentum_12m"] == 0 and down["breakout_55_20"] == 0
+    # causal: appending future days must not change earlier signals
+    np.testing.assert_allclose(rule_signals(rising.iloc[:400]).to_numpy(), up.iloc[:400].to_numpy(), equal_nan=True)

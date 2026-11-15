@@ -15,7 +15,7 @@ import pandas as pd
 
 from .config import Paths
 from .data import store
-from .features.panel import PanelBundle, build_panel
+from .features.panel import EXTRA_GROUPS, GROUPS, PanelBundle, build_panel
 from .model import train
 from .model.dataset import make_labels
 from .research import event_study, feature_ic
@@ -25,9 +25,10 @@ log = logging.getLogger(__name__)
 
 # Model variants compared in every run. MAIN is the one the paper account trades.
 VARIANTS = {
-    "cnn_all": {"kind": "cnn", "groups": None, "title": "CNN, all information"},
+    "cnn_all": {"kind": "cnn", "groups": GROUPS, "title": "CNN, all information"},
+    "cnn_rules": {"kind": "cnn", "groups": GROUPS + EXTRA_GROUPS, "title": "CNN, all information + classic rule signals"},
     "cnn_market": {"kind": "cnn", "groups": ["market", "calendar"], "title": "CNN, prices only"},
-    "linear_all": {"kind": "linear", "groups": None, "title": "Linear baseline, all information"},
+    "linear_all": {"kind": "linear", "groups": GROUPS, "title": "Linear baseline, all information"},
 }
 MAIN = "cnn_all"
 
@@ -195,6 +196,15 @@ def do_backtest(cfg: dict, paths: Paths) -> dict:
         if name == MAIN:
             for period, (start, end) in _periods(cfg, pred).items():
                 results["ablation"][period] = group_ablation(pred.loc[start:end], trade_h)
+
+    main_pred = read_pred(paths, MAIN)
+    if main_pred is not None:  # classic rule-based methods over the same periods
+        for period, (start, end) in _periods(cfg, main_pred).items():
+            table, _ = evaluate.classic_rules(bundle, cfg, start=start, end=end)
+            for strategy, row in table.iterrows():
+                if len(main_pred.loc[start:end]) >= 60:
+                    results["strategies"].append({"variant": "rules", "period": period, "strategy": strategy,
+                                                  **row.to_dict()})
 
     quality = pd.DataFrame(results["quality"])
     strategies = pd.DataFrame(results["strategies"])

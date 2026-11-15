@@ -118,6 +118,15 @@ ul { margin: 0; padding-inline-start: 20px; max-width: 68ch; } li { margin-block
   </section>
 
   <section>
+    <h2>מול שיטות מסחר קלאסיות</h2>
+    <p>תשע שיטות מוכרות נסחרו על אותו מדד, באותו חשבון וירטואלי ועם אותן עלויות ועיכוב ביצוע. הטבלה ממוינת לפי Sharpe, והמודל וקנה-והחזק משובצים בתוכה. כשבוחנים עשר שיטות, הטובה ביותר תיראה טוב גם במקרה, ולכן הדירוג בתקופת המבחן הנקי הוא זה שחשוב.</p>
+    <h3>מבחן נקי: {{HOLD_START}} ואילך</h3>
+    {{RULES_HOLDOUT}}
+    <h3>תקופת פיתוח: עד {{DEV_END}}</h3>
+    {{RULES_DEVELOPMENT}}
+  </section>
+
+  <section>
     <h2>שנה אחר שנה</h2>
     <div class="card">
       <div class="legend" id="yearly-legend"></div>

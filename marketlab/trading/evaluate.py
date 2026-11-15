@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from ..features import rules
 from ..features.panel import PanelBundle
 from . import metrics
 from .backtest import simulate
@@ -64,3 +65,21 @@ def yearly_returns(curves: dict[str, pd.DataFrame]) -> pd.DataFrame:
         previous = year_end.shift(1).fillna(year_start)
         out[name] = year_end / previous - 1.0
     return pd.DataFrame(out)
+
+
+def classic_rules(bundle: PanelBundle, cfg: dict, *, start=None, end=None) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
+    """Run every classic rule through the same broker, costs and execution delay as the model."""
+    tcfg, lag = cfg["trading"], int(cfg["model"]["execution_lag"])
+    signals = rules.rule_signals(bundle.price)  # computed on the full history, then cut
+    dates = bundle.price.index
+    if start is not None:
+        dates = dates[dates >= pd.Timestamp(start)]
+    if end is not None:
+        dates = dates[dates <= pd.Timestamp(end)]
+    rows, curves = [], {}
+    for name in signals.columns:
+        target = signals[name].reindex(dates).fillna(1.0).clip(0.0, float(tcfg["max_weight"]))
+        equity, trades = simulate(bundle.price, target, bundle.cash_rate, tcfg, lag)
+        curves[name] = equity
+        rows.append(_summary(name, equity, trades, bundle))
+    return pd.DataFrame(rows).set_index("strategy"), curves

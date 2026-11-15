@@ -14,17 +14,20 @@ import numpy as np
 import pandas as pd
 
 from ..config import Paths
+from ..features.rules import RULES
 from ..trading import paper
 
 TEMPLATE = Path(__file__).with_name("template.html")
 
 STRATEGY_HE = {"cnn_all": "המודל (CNN, כל המידע)", "cnn_market": "CNN על מחירים בלבד",
+               "cnn_rules": "CNN + אותות השיטות הקלאסיות",
                "linear_all": "מודל ליניארי (כל המידע)", "buy_and_hold": "קנה והחזק",
                "trend_200d": "כלל מגמה (ממוצע 200 יום)", "constant_mix": "חשיפה קבועה זהה"}
 PERIOD_HE = {"development": "פיתוח", "holdout": "מבחן נקי (holdout)", "full": "כל התקופה"}
 GROUP_HE = {"market": "מחיר ותנודתיות", "rates": "ריביות ואשראי", "cross": "מט\"ח ונפט",
             "liquidity": "נזילות ותנאים פיננסיים", "macro": "מאקרו", "forecasts": "תחזיות וציפיות",
-            "news_idx": "מדדי חדשות", "wiki": "אירועי עולם (ויקיפדיה)", "calendar": "לוח שנה ו-FOMC"}
+            "news_idx": "מדדי חדשות", "wiki": "אירועי עולם (ויקיפדיה)", "calendar": "לוח שנה ו-FOMC",
+            "rules": "שיטות מסחר קלאסיות"}
 EVENT_HE = {
     "news: war": "חדשות: מלחמה", "news: terror": "חדשות: טרור", "news: disaster": "חדשות: אסון טבע/תאונה",
     "news: health": "חדשות: בריאות ומגפות", "news: economy": "חדשות: כלכלה", "news: central_bank": "חדשות: בנקים מרכזיים",
@@ -68,10 +71,10 @@ def _table(headers: list[str], rows: list[list[str]], highlight: int | None = No
 
 def _strategy_rows(strategies: pd.DataFrame, period: str) -> list[list[str]]:
     part = strategies[strategies["period"] == period]
-    order = ["cnn_all", "buy_and_hold", "constant_mix", "trend_200d", "cnn_market", "linear_all"]
+    order = ["cnn_all", "buy_and_hold", "constant_mix", "cnn_rules", "cnn_market", "linear_all"]
     rows = []
     for name in order:
-        match = part[part["strategy"] == name]
+        match = part[(part["strategy"] == name) & (part["variant"] != "rules")]
         if match.empty:
             continue
         r = match.iloc[0]
@@ -81,9 +84,20 @@ def _strategy_rows(strategies: pd.DataFrame, period: str) -> list[list[str]]:
     return rows
 
 
+def _rule_rows(strategies: pd.DataFrame, period: str) -> list[list[str]]:
+    """Classic rules ranked by Sharpe, with the model and buy-and-hold placed among them."""
+    part = strategies[strategies["period"] == period]
+    rules = part[part["variant"] == "rules"]
+    extra = part[(part["variant"] != "rules") & part["strategy"].isin(["cnn_all", "buy_and_hold"])]
+    table = pd.concat([rules, extra]).sort_values("sharpe", ascending=False)
+    return [[RULES.get(r["strategy"], STRATEGY_HE.get(r["strategy"], r["strategy"])), _pct(r["cagr"]), _pct(r["vol"]),
+             _num(r["sharpe"]), _pct(r["max_drawdown"]), _pct(r["avg_exposure"], 0), _num(r["trades_per_year"], 0),
+             _num(r["timing_pvalue"], 2)] for _, r in table.iterrows()]
+
+
 def _verdict(strategies: pd.DataFrame) -> tuple[str, str]:
     """One-sentence reading of the holdout result, derived from the numbers."""
-    hold = strategies[strategies["period"] == "holdout"].set_index("strategy")
+    hold = strategies[(strategies["period"] == "holdout") & (strategies["variant"] != "rules")].set_index("strategy")
     if "cnn_all" not in hold.index or "buy_and_hold" not in hold.index:
         return "neutral", "עדיין אין תוצאות לתקופת המבחן הנקייה."
     model, bench = hold.loc["cnn_all"], hold.loc["buy_and_hold"]
@@ -105,7 +119,7 @@ def _verdict(strategies: pd.DataFrame) -> tuple[str, str]:
 
 def _quality_rows(quality: pd.DataFrame) -> list[list[str]]:
     rows = []
-    for variant in ("cnn_all", "cnn_market", "linear_all"):
+    for variant in ("cnn_all", "cnn_rules", "cnn_market", "linear_all"):
         for period in ("development", "holdout"):
             part = quality[(quality["variant"] == variant) & (quality["period"] == period)]
             for _, r in part.sort_values("horizon").iterrows():
@@ -138,7 +152,7 @@ def build_report(cfg: dict, paths: Paths) -> Path:
     # ------------------------------------------------------------------ headline
     tone, verdict = _verdict(strategies)
     parts["VERDICT"] = f'<p class="verdict {tone}">{html.escape(verdict)}</p>'
-    hold = strategies[strategies["period"] == "holdout"].set_index("strategy")
+    hold = strategies[(strategies["period"] == "holdout") & (strategies["variant"] != "rules")].set_index("strategy")
     tiles = []
     if "cnn_all" in hold.index and "buy_and_hold" in hold.index:
         m, b = hold.loc["cnn_all"], hold.loc["buy_and_hold"]
@@ -178,6 +192,12 @@ def build_report(cfg: dict, paths: Paths) -> Path:
                "תרומת תזמון", "p תזמון"]
     for period in ("holdout", "development"):
         parts[f"STRATEGIES_{period.upper()}"] = _table(headers, _strategy_rows(strategies, period), highlight=0)
+
+    rule_headers = ["שיטה", "תשואה שנתית", "תנודתיות", "Sharpe", "ירידה מקס׳", "חשיפה", "עסקאות/שנה", "p תזמון"]
+    for period in ("holdout", "development"):
+        rows = _rule_rows(strategies, period)
+        if rows:
+            parts[f"RULES_{period.upper()}"] = _table(rule_headers, rows)
 
     yearly = _read(run / "yearly_full.csv", index_col=0)
     if yearly is not None:
@@ -279,7 +299,7 @@ def build_report(cfg: dict, paths: Paths) -> Path:
     page = TEMPLATE.read_text(encoding="utf-8")
     for key in ("VERDICT", "TILES", "EQUITY_TABLE", "STRATEGIES_HOLDOUT", "STRATEGIES_DEVELOPMENT", "YEARLY_TABLE",
                 "QUALITY", "EVENTS", "EVENTS_BASELINE", "FEATURES", "FEATURES_NOTE", "PAPER", "FACTS", "TARGET",
-                "HOLDOUT_NOTE",
+                "HOLDOUT_NOTE", "RULES_HOLDOUT", "RULES_DEVELOPMENT",
                 "DEV_END", "HOLD_START", "HORIZON", "COST"):
         empty = "" if key in ("FACTS", "TILES", "EVENTS_BASELINE", "FEATURES_NOTE") else '<p class="muted">אין נתונים עדיין.</p>'
         page = page.replace("{{" + key + "}}", parts.get(key) or empty)
