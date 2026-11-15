@@ -114,3 +114,13 @@ def test_classic_rules_are_bounded_and_behave_on_simple_paths():
     assert down["trend_200d"] == 0 and down["momentum_12m"] == 0 and down["breakout_55_20"] == 0
     # causal: appending future days must not change earlier signals
     np.testing.assert_allclose(rule_signals(rising.iloc[:400]).to_numpy(), up.iloc[:400].to_numpy(), equal_nan=True)
+
+
+def test_macd_lines_are_scale_free_and_causal():
+    from marketlab.features.rules import macd_lines
+    dates = pd.bdate_range("2015-01-01", periods=300)
+    price = pd.Series(np.exp(np.linspace(0, 0.6, 300)), index=dates)
+    lines = macd_lines(price)
+    assert lines["macd"].iloc[-1] > 0                      # steady uptrend: fast average above slow
+    np.testing.assert_allclose(macd_lines(price * 1000.0).to_numpy(), lines.to_numpy(), equal_nan=True)
+    np.testing.assert_allclose(macd_lines(price.iloc[:200]).to_numpy(), lines.iloc[:200].to_numpy(), equal_nan=True)

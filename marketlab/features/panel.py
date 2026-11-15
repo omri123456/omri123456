@@ -340,6 +340,10 @@ def build_panel(raw: RawData, cfg: dict) -> PanelBundle:
     signals = rules.rule_signals(price)
     for col in signals.columns:
         b.add(f"rule_{col}", signals[col], "rules")
+    macd = rules.macd_lines(price)  # the rule above only says in/out; these carry the strength
+    b.add("macd_line", macd["macd"], "rules")
+    b.add("macd_hist", macd["macd_hist"], "rules")
+    b.add("macd_hist_chg_5d", macd["macd_hist"].diff(5), "rules")
 
     panel = pd.DataFrame(b.columns, index=calendar)
     start = pd.Timestamp(cfg["project"]["start"])

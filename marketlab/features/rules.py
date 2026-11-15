@@ -43,6 +43,20 @@ def _stateful(enter: np.ndarray, leave: np.ndarray) -> np.ndarray:
     return out
 
 
+def macd_lines(price: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:
+    """MACD as continuous numbers, scaled by price so they compare across decades.
+
+    macd      = EMA(fast) - EMA(slow): the strength and direction of the trend
+    histogram = macd - its own EMA(signal): whether that trend is gaining or losing speed
+    """
+    price = price.astype(float)
+    quick = price.ewm(span=fast, adjust=False, min_periods=slow).mean()
+    lazy = price.ewm(span=slow, adjust=False, min_periods=slow).mean()
+    macd = (quick - lazy) / price
+    line = macd.ewm(span=signal, adjust=False, min_periods=signal).mean()
+    return pd.DataFrame({"macd": macd, "macd_hist": macd - line})
+
+
 def rule_signals(price: pd.Series) -> pd.DataFrame:
     """Target weight of every rule on every trading day (NaN until a rule has enough history)."""
     price = price.astype(float)
