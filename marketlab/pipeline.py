@@ -163,7 +163,7 @@ def group_ablation(pred: pd.DataFrame, horizon: int) -> pd.DataFrame:
 
 def do_backtest(cfg: dict, paths: Paths) -> dict:
     """Score every variant out of sample and simulate the strategies with virtual money."""
-    _, bundle = load_bundle(cfg, paths)
+    raw, bundle = load_bundle(cfg, paths)
     out = run_dir(paths)
     horizons = [int(h) for h in cfg["model"]["horizons"]]
     trade_h = int(cfg["model"]["trade_horizon"])
@@ -208,6 +208,20 @@ def do_backtest(cfg: dict, paths: Paths) -> dict:
         if len(results["ablation"].get(period, [])):
             results["ablation"][period].to_csv(out / f"ablation_{period}.csv")
     results["quality"], results["strategies"], results["curves"] = quality, strategies, curves_main
+    main = read_pred(paths, MAIN)
+    info = {
+        "data_last_day": str(bundle.panel.index[-1].date()),
+        "panel_days": int(bundle.panel.shape[0]), "panel_features": int(bundle.panel.shape[1]),
+        "events": int(len(raw.events)) if raw.events is not None else 0,
+        "seeds": len(cfg["model"]["seeds"]),
+        "first_test_year": int(main["fold"].min()) if main is not None else None,
+        "last_test_year": int(main["fold"].max()) if main is not None else None,
+    }
+    model_path = paths.models / "production.pt"
+    if model_path.exists():
+        info["parameters"] = int(train.load_production(model_path)["parameters"])
+    with open(out / "run_info.json", "w", encoding="utf-8") as fh:
+        json.dump(info, fh, indent=1)
     log.info("backtest: %d quality rows, %d strategy rows", len(quality), len(strategies))
     return results
 

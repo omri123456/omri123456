@@ -1,0 +1,417 @@
+<title>MarketLab NASDAQ-100</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap">
+<style>
+/* Layout: one reading column of research notes; the verdict and five figures first, evidence below. */
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --ink: #10151c; --ink-2: #4a5361; --muted: #6f7885;
+  --line: #e3e6eb; --axis: #c2c8d1; --wash: rgba(16, 21, 28, 0.045);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --neg: #e34948;
+  --good: #006300; --bad: #b3261e; --good-bg: #e8f5e8; --bad-bg: #fdecea; --neutral-bg: #eef1f5;
+  --font: "Heebo", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --surface: #171b22; --ink: #eef0f3; --ink-2: #c0c6cf; --muted: #8a93a0;
+    --line: #2a303a; --axis: #3a424e; --wash: rgba(238, 240, 243, 0.06);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --neg: #e66767;
+    --good: #4cc04c; --bad: #f08a80; --good-bg: #14301a; --bad-bg: #3a1c1a; --neutral-bg: #1f2530;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1116; --surface: #171b22; --ink: #eef0f3; --ink-2: #c0c6cf; --muted: #8a93a0;
+  --line: #2a303a; --axis: #3a424e; --wash: rgba(238, 240, 243, 0.06);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --neg: #e66767;
+  --good: #4cc04c; --bad: #f08a80; --good-bg: #14301a; --bad-bg: #3a1c1a; --neutral-bg: #1f2530;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; }
+.page { max-width: 1000px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px; }
+.page > * { min-width: 0; }
+header { display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font-size: 13px; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; }
+h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.2; font-weight: 700; margin: 0; text-wrap: balance; }
+h2 { font-size: 21px; font-weight: 700; margin: 0; text-wrap: balance; }
+h3 { font-size: 15px; font-weight: 500; margin: 0; color: var(--ink-2); }
+p { margin: 0; max-width: 68ch; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.muted { color: var(--muted); font-size: 14px; }
+.facts { color: var(--muted); font-size: 13.5px; max-width: none; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; direction: ltr;
+  unicode-bidi: isolate; background: var(--wash); padding: 1px 5px; border-radius: 4px; }
+.verdict { font-size: 17px; padding: 14px 16px; border-radius: 8px; max-width: none; background: var(--neutral-bg); }
+.verdict.good { background: var(--good-bg); } .verdict.bad { background: var(--bad-bg); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile-label { font-size: 13px; color: var(--ink-2); }
+.tile-value { font-size: 26px; font-weight: 700; direction: ltr; text-align: right; line-height: 1.25; }
+.tile-note { font-size: 12.5px; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px;
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.chart { position: relative; direction: ltr; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart svg:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.chart text { font-family: var(--font); font-size: 11.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { display: inline-block; width: 16px; height: 0; border-top: 2px solid; border-radius: 2px; }
+.key.box { height: 10px; width: 10px; border: 0; border-radius: 2px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 6px; padding: 7px 9px; font-size: 12.5px; line-height: 1.5; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  min-width: 130px; z-index: 2; direction: rtl; }
+.tip .when { color: var(--muted); direction: ltr; text-align: right; }
+.tip .row { display: flex; align-items: center; gap: 6px; }
+.tip .row b { font-weight: 700; color: var(--ink); direction: ltr; font-variant-numeric: tabular-nums; }
+.tip .row i { font-style: normal; color: var(--ink-2); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { direction: ltr; }
+thead th { font-weight: 500; color: var(--ink-2); font-size: 12.5px; white-space: normal; vertical-align: bottom; }
+tbody th { font-weight: 500; white-space: normal; min-width: 150px; }
+tr.lead th, tr.lead td { font-weight: 700; background: var(--wash); }
+details { font-size: 14px; } summary { cursor: pointer; color: var(--ink-2); width: fit-content; }
+summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.hbars { display: grid; grid-template-columns: minmax(110px, auto) 1fr auto; gap: 7px 10px; align-items: center; font-size: 13px; }
+.hbars .track { position: relative; height: 12px; direction: ltr; }
+.hbars .track::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; border-left: 1px solid var(--axis); }
+.hbars .bar { position: absolute; top: 0; height: 12px; }
+.hbars .bar.pos { left: 50%; background: var(--s1); border-radius: 0 4px 4px 0; }
+.hbars .bar.neg { right: 50%; background: var(--neg); border-radius: 4px 0 0 4px; }
+.hbars .val { direction: ltr; font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: left; }
+ul { margin: 0; padding-inline-start: 20px; max-width: 68ch; } li { margin-block: 4px; }
+</style>
+
+<div class="page" dir="rtl" lang="he">
+  <header>
+    <div class="eyebrow">MarketLab · מדד {{TARGET}} · חיזוי ל-{{HORIZON}} ימי מסחר</div>
+    <h1>האם ה-CNN מצליח לתזמן את השוק?</h1>
+    {{VERDICT}}
+    <div class="tiles">{{TILES}}</div>
+    <p class="facts">המספרים למעלה הם מתקופת המבחן הנקייה ({{HOLD_START}} ואילך), שהמודל ואני לא ראינו בזמן התכנון. {{FACTS}}</p>
+  </header>
+
+  <section>
+    <h2>100 דולר וירטואליים לאורך זמן</h2>
+    <p>כל שנה נחזתה על ידי מודל שאומן רק על מה שהיה ידוע לפניה. ההחלטה מתקבלת אחרי הסגירה ומבוצעת בסגירה של יום המסחר הבא, עם עלות של {{COST}} נקודות בסיס לכל עסקה; מזומן פנוי צובר ריבית קצרה.</p>
+    <div class="card">
+      <div class="legend" id="equity-legend"></div>
+      <div class="chart" id="equity"></div>
+      <h3>חשיפת המודל למדד (0% = מזומן, 100% = מושקע במלואו)</h3>
+      <div class="chart" id="exposure"></div>
+      <details><summary>הצג כטבלה (ערך בסוף כל שנה, התחלה = 100)</summary>{{EQUITY_TABLE}}</details>
+    </div>
+  </section>
+
+  <section>
+    <h2>השוואת אסטרטגיות</h2>
+    <p>״חשיפה קבועה זהה״ מחזיקה תמיד את אותה חשיפה ממוצעת כמו המודל, כך שההפרש ביניהם הוא ערך התזמון בלבד. ״p תזמון״ הוא הסיכוי לקבל תזמון טוב לפחות באותה מידה אם מזיזים את אותן פוזיציות לזמנים אקראיים; מתחת ל-0.05 נחשב מובהק.</p>
+    <h3>מבחן נקי: {{HOLD_START}} ואילך</h3>
+    {{STRATEGIES_HOLDOUT}}
+    <h3>תקופת פיתוח: עד {{DEV_END}} (שימשה לבחירת התכנון, ולכן אופטימית)</h3>
+    {{STRATEGIES_DEVELOPMENT}}
+  </section>
+
+  <section>
+    <h2>שנה אחר שנה</h2>
+    <div class="card">
+      <div class="legend" id="yearly-legend"></div>
+      <div class="chart" id="yearly"></div>
+      <details><summary>הצג כטבלה</summary>{{YEARLY_TABLE}}</details>
+    </div>
+  </section>
+
+  <section>
+    <h2>איכות החיזוי עצמו</h2>
+    <p>AUC של 0.5 ו-IC של 0 פירושם ניחוש. ״שיפור מול שיעור הבסיס״ משווה את ההסתברויות של המודל לחיזוי קבוע של שיעור העליות ההיסטורי; ערך שלילי אומר שההסתברות המוחלטת של המודל גרועה מהקבוע. ״IC של הציון היחסי״ בודק את מה שהאסטרטגיה באמת משתמשת בו: עד כמה המודל אופטימי יחסית לעצמו בשנה האחרונה.</p>
+    {{QUALITY}}
+  </section>
+
+  <section>
+    <h2>איזה סוג מידע עוזר לחיזוי</h2>
+    <p>לכל קבוצת נתונים: כמה נפגע החיזוי מחוץ למדגם כשמנטרלים אותה (מחליפים בממוצע). ימינה = הקבוצה עזרה, שמאלה = הקבוצה הזיקה. היחידות הן שינוי ב-log-loss כפול 10,000.</p>
+    <div class="two">
+      <div class="card"><h3>מבחן נקי</h3><div class="hbars" id="ablation-holdout"></div></div>
+      <div class="card"><h3>תקופת פיתוח</h3><div class="hbars" id="ablation-development"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>איך המדד מתנהג סביב אירועים</h2>
+    <p>מחקר תיאורי על כל התקופה: התשואה המצטברת של המדד סביב כל סוג אירוע, בניכוי המגמה הממוצעת שלו. יום 0 הוא יום האירוע. {{EVENTS_BASELINE}}</p>
+    <div class="card">
+      <div class="legend" id="paths-legend"></div>
+      <div class="chart" id="paths"></div>
+    </div>
+    {{EVENTS}}
+    <p class="muted">t מעל 2 בערך מוחלט מרמז על דפוס שאינו מקרי, אבל עם עשרות סוגי אירועים כמה ערכים כאלה צפויים גם במקרה. זהו תיאור של העבר, לא כלל מסחר.</p>
+  </section>
+
+  <section>
+    <h2>הפיצ'רים היציבים ביותר</h2>
+    <p>מתאם דירוג בין ערך הפיצ'ר לתשואת המדד ב-{{HORIZON}} הימים הבאים, בנפרד עד {{DEV_END}} ואחריה. מוצגים רק פיצ'רים שהכיוון שלהם זהה בשתי התקופות. {{FEATURES_NOTE}}</p>
+    {{FEATURES}}
+  </section>
+
+  <section>
+    <h2>חשבון המסחר הוירטואלי</h2>
+    <p>החשבון ממשיך את אותה אסטרטגיה קדימה בזמן אמת, עם אותם כללים בדיוק כמו בסימולציה. מקדמים אותו עם <code>python -m marketlab daily</code>.</p>
+    {{PAPER}}
+  </section>
+
+  <section>
+    <h2>מה חשוב לדעת כשקוראים את זה</h2>
+    <ul>
+      <li>המדד הוא מדד מחיר בלי דיבידנדים, וזמינים רק מחירי סגירה. גם קנה-והחזק מחושב על אותו מדד, כך שההשוואה הוגנת.</li>
+      <li>לכל סדרת נתונים הוגדר עיכוב פרסום אמיתי, כדי שהמודל לא יראה מספר לפני שאפשר היה להשיג אותו. חלק מנתוני המאקרו מתעדכנים בדיעבד, וזה נשאר מקור קטן להטיה אופטימית.</li>
+      <li>דפי האירועים בויקיפדיה נערכים גם אחרי היום עצמו, ולכן בזמן אמת הם פחות מלאים מאשר בהיסטוריה.</li>
+      <li>תקופת מבחן אחת, על מדד אחד, היא מדגם קטן. תוצאה טובה או רעה כאן היא עדות, לא הוכחה.</li>
+    </ul>
+  </section>
+</div>
+
+<script type="application/json" id="data">{{DATA}}</script>
+<script>
+(function () {
+  var DATA = JSON.parse(document.getElementById('data').textContent || '{}');
+  var NS = 'http://www.w3.org/2000/svg';
+  var COLORS = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)'];
+  function el(name, attrs, parent) {
+    var node = document.createElementNS(NS, name);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function div(cls, parent, text) {
+    var node = document.createElement('div');
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function legend(id, series, box) {
+    var host = document.getElementById(id);
+    if (!host || series.length < 2) return;
+    host.textContent = '';
+    series.forEach(function (s, i) {
+      var item = document.createElement('span');
+      var key = document.createElement('span');
+      key.className = box ? 'key box' : 'key';
+      key.style[box ? 'background' : 'borderColor'] = COLORS[i];
+      item.appendChild(key);
+      item.appendChild(document.createTextNode(s.name));
+      host.appendChild(item);
+    });
+  }
+  function niceTicks(lo, hi, count) {
+    var span = hi - lo || 1, step = Math.pow(10, Math.floor(Math.log10(span / count)));
+    var err = span / count / step;
+    step *= err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
+    var ticks = [];
+    for (var v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(Math.round(v / step) * step);
+    return ticks;
+  }
+  function tooltip(host) {
+    var tip = div('tip', host); tip.hidden = true;
+    return {
+      show: function (when, rows, x, y) {
+        tip.textContent = '';
+        div('when', tip, when);
+        rows.forEach(function (r) {
+          var row = div('row', tip), key = document.createElement('span');
+          key.className = 'key'; key.style.borderColor = r.color; row.appendChild(key);
+          var b = document.createElement('b'); b.textContent = r.value; row.appendChild(b);
+          var i = document.createElement('i'); i.textContent = r.name; row.appendChild(i);
+        });
+        tip.hidden = false;
+        var w = tip.offsetWidth, hostW = host.clientWidth;
+        tip.style.left = Math.max(0, Math.min(hostW - w, x + (x + w + 14 > hostW ? -w - 12 : 12))) + 'px';
+        tip.style.top = Math.max(0, y) + 'px';
+      },
+      hide: function () { tip.hidden = true; }
+    };
+  }
+
+  // ---------------------------------------------------------------- line chart with crosshair
+  function lineChart(id, cfg) {
+    var host = document.getElementById(id);
+    if (!host || !cfg || !cfg.series || !cfg.series.length) { if (host) host.textContent = 'אין נתונים עדיין.'; return; }
+    function draw() {
+      host.textContent = '';
+      var W = Math.max(280, host.clientWidth), H = cfg.height || 300;
+      var m = { l: 46, r: 14, t: 16, b: 26 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
+      var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', tabindex: '0',
+                            'aria-label': cfg.label || '' }, host);
+      var n = cfg.x.length, all = [];
+      cfg.series.forEach(function (s) { s.values.forEach(function (v) { if (v != null) all.push(v); }); });
+      var lo = cfg.min != null ? cfg.min : Math.min.apply(null, all), hi = cfg.max != null ? cfg.max : Math.max.apply(null, all);
+      var f = cfg.log ? Math.log10 : function (v) { return v; };
+      if (!cfg.log && cfg.min == null) { var pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad; }
+      var flo = f(lo), fhi = f(hi);
+      function X(i) { return m.l + (n > 1 ? i / (n - 1) : 0.5) * pw; }
+      function Y(v) { return m.t + (1 - (f(v) - flo) / (fhi - flo || 1)) * ph; }
+      var ticks = cfg.log ? [50, 100, 200, 500, 1000, 2000, 5000, 10000].filter(function (t) { return t >= lo && t <= hi; })
+                          : niceTicks(lo, hi, 5);
+      if (cfg.split) {
+        var si = cfg.x.findIndex(function (d) { return d >= cfg.split; });
+        if (si > 0) {
+          el('rect', { x: X(si), y: m.t, width: m.l + pw - X(si), height: ph, fill: 'var(--wash)' }, svg);
+          var a = el('text', { x: X(si) - 6, y: m.t + 12, 'text-anchor': 'end' }, svg); a.textContent = 'פיתוח';
+          var b = el('text', { x: X(si) + 6, y: m.t + 12, 'text-anchor': 'start' }, svg); b.textContent = 'מבחן נקי';
+        }
+      }
+      ticks.forEach(function (t) {
+        el('line', { x1: m.l, x2: m.l + pw, y1: Y(t), y2: Y(t), stroke: 'var(--line)', 'stroke-width': 1 }, svg);
+        var label = el('text', { x: m.l - 6, y: Y(t) + 4, 'text-anchor': 'end' }, svg);
+        label.textContent = cfg.fmtAxis ? cfg.fmtAxis(t) : t.toLocaleString('en-US');
+      });
+      if (cfg.zero && lo < 0 && hi > 0)
+        el('line', { x1: m.l, x2: m.l + pw, y1: Y(0), y2: Y(0), stroke: 'var(--axis)', 'stroke-width': 1 }, svg);
+      var lastX = -99;
+      cfg.x.forEach(function (d, i) {
+        var show = cfg.dates ? (i === 0 || String(d).slice(0, 4) !== String(cfg.x[i - 1]).slice(0, 4)) : (d % 5 === 0);
+        if (!show || X(i) - lastX < 44) return;
+        lastX = X(i);
+        var t = el('text', { x: X(i), y: H - 8, 'text-anchor': 'middle' }, svg);
+        t.textContent = cfg.dates ? String(d).slice(0, 4) : (d > 0 ? '+' + d : String(d));
+      });
+      if (!cfg.dates) {
+        var zi = cfg.x.indexOf(0);
+        if (zi >= 0) el('line', { x1: X(zi), x2: X(zi), y1: m.t, y2: m.t + ph, stroke: 'var(--axis)', 'stroke-width': 1 }, svg);
+      }
+      cfg.series.forEach(function (s, k) {
+        var d = '', pen = false, lastI = -1;
+        s.values.forEach(function (v, i) {
+          if (v == null) { pen = false; return; }
+          d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); pen = true; lastI = i;
+        });
+        if (cfg.area && lastI >= 0)
+          el('path', { d: d + 'L' + X(lastI).toFixed(1) + ' ' + Y(lo) + 'L' + X(0).toFixed(1) + ' ' + Y(lo) + 'Z',
+                       fill: COLORS[k], 'fill-opacity': 0.12, stroke: 'none' }, svg);
+        el('path', { d: d, fill: 'none', stroke: COLORS[k], 'stroke-width': cfg.area ? 1.5 : 2,
+                     'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+        if (lastI >= 0 && !cfg.area)
+          el('circle', { cx: X(lastI), cy: Y(s.values[lastI]), r: 4, fill: COLORS[k], stroke: 'var(--surface)', 'stroke-width': 2 }, svg);
+      });
+      var cross = el('line', { y1: m.t, y2: m.t + ph, stroke: 'var(--axis)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+      var dots = cfg.series.map(function (s, k) {
+        return el('circle', { r: 4, fill: COLORS[k], stroke: 'var(--surface)', 'stroke-width': 2, visibility: 'hidden' }, svg);
+      });
+      var tip = tooltip(host), current = n - 1;
+      function show(i) {
+        current = Math.max(0, Math.min(n - 1, i));
+        cross.setAttribute('x1', X(current)); cross.setAttribute('x2', X(current)); cross.setAttribute('visibility', 'visible');
+        var rows = [];
+        cfg.series.forEach(function (s, k) {
+          var v = s.values[current];
+          dots[k].setAttribute('visibility', v == null ? 'hidden' : 'visible');
+          if (v == null) return;
+          dots[k].setAttribute('cx', X(current)); dots[k].setAttribute('cy', Y(v));
+          rows.push({ color: COLORS[k], name: s.name, value: cfg.fmt ? cfg.fmt(v) : String(v) });
+        });
+        tip.show(cfg.dates ? String(cfg.x[current]) : 'יום ' + (cfg.x[current] > 0 ? '+' : '') + cfg.x[current], rows, X(current), m.t);
+      }
+      function hide() { cross.setAttribute('visibility', 'hidden'); dots.forEach(function (c) { c.setAttribute('visibility', 'hidden'); }); tip.hide(); }
+      var hit = el('rect', { x: m.l, y: m.t, width: pw, height: ph, fill: 'transparent' }, svg);
+      hit.addEventListener('pointermove', function (e) {
+        var box = svg.getBoundingClientRect();
+        show(Math.round(((e.clientX - box.left) * (W / box.width) - m.l) / pw * (n - 1)));
+      });
+      hit.addEventListener('pointerleave', hide);
+      svg.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') { show(current - 1); e.preventDefault(); }
+        if (e.key === 'ArrowRight') { show(current + 1); e.preventDefault(); }
+      });
+      svg.addEventListener('focus', function () { show(current); });
+      svg.addEventListener('blur', hide);
+    }
+    draw();
+    if (window.ResizeObserver) { var last = host.clientWidth; new ResizeObserver(function () { if (Math.abs(host.clientWidth - last) > 4) { last = host.clientWidth; draw(); } }).observe(host); }
+  }
+
+  // ---------------------------------------------------------------- grouped columns
+  function barChart(id, cfg) {
+    var host = document.getElementById(id);
+    if (!host || !cfg || !cfg.series || !cfg.series.length) { if (host) host.textContent = 'אין נתונים עדיין.'; return; }
+    function draw() {
+      host.textContent = '';
+      var W = Math.max(280, host.clientWidth), H = 280, m = { l: 46, r: 8, t: 12, b: 26 };
+      var pw = W - m.l - m.r, ph = H - m.t - m.b, n = cfg.x.length, ns = cfg.series.length;
+      var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': cfg.label || '' }, host);
+      var all = [0]; cfg.series.forEach(function (s) { all = all.concat(s.values); });
+      var ticks = niceTicks(Math.min.apply(null, all), Math.max.apply(null, all), 5);
+      var lo = Math.min(ticks[0], Math.min.apply(null, all)), hi = Math.max(ticks[ticks.length - 1], Math.max.apply(null, all));
+      function Y(v) { return m.t + (1 - (v - lo) / (hi - lo)) * ph; }
+      var band = pw / n, bw = Math.max(3, Math.min(24, (band - 8) / ns - 2));
+      ticks.forEach(function (t) {
+        el('line', { x1: m.l, x2: m.l + pw, y1: Y(t), y2: Y(t), stroke: t === 0 ? 'var(--axis)' : 'var(--line)', 'stroke-width': 1 }, svg);
+        var label = el('text', { x: m.l - 6, y: Y(t) + 4, 'text-anchor': 'end' }, svg); label.textContent = t + '%';
+      });
+      var tip = tooltip(host), lastX = -99;
+      cfg.x.forEach(function (name, i) {
+        var cx = m.l + band * (i + 0.5), group = el('g', {}, svg);
+        cfg.series.forEach(function (s, k) {
+          var v = s.values[i], x = cx - (ns * (bw + 2) - 2) / 2 + k * (bw + 2);
+          var y0 = Y(0), y1 = Y(v), r = Math.min(4, Math.abs(y1 - y0), bw / 2), top = Math.min(y0, y1), h = Math.abs(y1 - y0);
+          var d = v >= 0
+            ? 'M' + x + ' ' + y0 + 'V' + (top + r) + 'Q' + x + ' ' + top + ' ' + (x + r) + ' ' + top + 'H' + (x + bw - r) + 'Q' + (x + bw) + ' ' + top + ' ' + (x + bw) + ' ' + (top + r) + 'V' + y0 + 'Z'
+            : 'M' + x + ' ' + y0 + 'V' + (top + h - r) + 'Q' + x + ' ' + (top + h) + ' ' + (x + r) + ' ' + (top + h) + 'H' + (x + bw - r) + 'Q' + (x + bw) + ' ' + (top + h) + ' ' + (x + bw) + ' ' + (top + h - r) + 'V' + y0 + 'Z';
+          el('path', { d: d, fill: COLORS[k] }, group);
+        });
+        if (cx - lastX >= 34) { lastX = cx; var t = el('text', { x: cx, y: H - 8, 'text-anchor': 'middle' }, svg); t.textContent = name; }
+        var hit = el('rect', { x: cx - band / 2, y: m.t, width: band, height: ph, fill: 'transparent', tabindex: '0' }, svg);
+        function on() {
+          group.setAttribute('opacity', 0.75);
+          tip.show(name, cfg.series.map(function (s, k) { return { color: COLORS[k], name: s.name, value: (s.values[i] > 0 ? '+' : '') + s.values[i] + '%' }; }), cx, m.t);
+        }
+        function off() { group.removeAttribute('opacity'); tip.hide(); }
+        hit.addEventListener('pointermove', on); hit.addEventListener('pointerleave', off);
+        hit.addEventListener('focus', on); hit.addEventListener('blur', off);
+      });
+    }
+    draw();
+    if (window.ResizeObserver) { var last = host.clientWidth; new ResizeObserver(function () { if (Math.abs(host.clientWidth - last) > 4) { last = host.clientWidth; draw(); } }).observe(host); }
+  }
+
+  // ---------------------------------------------------------------- horizontal diverging bars (plain HTML)
+  function hbars(id, cfg) {
+    var host = document.getElementById(id);
+    if (!host) return;
+    if (!cfg || !cfg.values || !cfg.values.length) { host.textContent = 'אין נתונים עדיין.'; return; }
+    var span = Math.max.apply(null, cfg.values.map(Math.abs)) || 1;
+    cfg.labels.forEach(function (label, i) {
+      var v = cfg.values[i];
+      div('', host, label);
+      var track = div('track', host), bar = div('bar ' + (v >= 0 ? 'pos' : 'neg'), track);
+      bar.style.width = (Math.abs(v) / span * 50) + '%';
+      track.title = label + ': ' + (v > 0 ? '+' : '') + v;
+      div('val', host, (v > 0 ? '+' : '') + v.toFixed(1));
+    });
+  }
+
+  var pct = function (v) { return (v > 0 ? '+' : '') + v.toFixed(2) + '%'; };
+  if (DATA.equity) {
+    legend('equity-legend', DATA.equity.series);
+    lineChart('equity', { x: DATA.equity.x, series: DATA.equity.series, dates: true, log: true, split: DATA.equity.split,
+      height: 320, label: 'שווי של 100 דולר לאורך זמן, סולם לוגריתמי',
+      fmt: function (v) { return v.toLocaleString('en-US', { maximumFractionDigits: 0 }); } });
+  }
+  if (DATA.exposure)
+    lineChart('exposure', { x: DATA.exposure.x, series: DATA.exposure.series, dates: true, area: true, min: 0, max: 1, height: 130,
+      label: 'חשיפת המודל למדד', fmtAxis: function (t) { return Math.round(t * 100) + '%'; },
+      fmt: function (v) { return Math.round(v * 100) + '%'; } });
+  if (DATA.yearly) { legend('yearly-legend', DATA.yearly.series, true); barChart('yearly', Object.assign({ label: 'תשואה שנתית' }, DATA.yearly)); }
+  if (DATA.event_paths) {
+    legend('paths-legend', DATA.event_paths.series);
+    lineChart('paths', { x: DATA.event_paths.x, series: DATA.event_paths.series, zero: true, height: 280,
+      label: 'תשואה חריגה מצטברת סביב אירועים', fmtAxis: function (t) { return t + '%'; }, fmt: pct });
+  }
+  hbars('ablation-holdout', DATA.ablation_holdout);
+  hbars('ablation-development', DATA.ablation_development);
+})();
+</script>

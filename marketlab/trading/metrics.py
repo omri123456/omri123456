@@ -140,7 +140,13 @@ def prediction_quality(pred: pd.DataFrame, horizon: int) -> dict:
     block = max(20, 2 * horizon)
     ic_lo, ic_hi = block_bootstrap_ci(ic_of, len(p), block=block)
     sk_lo, sk_hi = block_bootstrap_ci(skill_of, len(p), block=block)
+    score_ic = np.nan
+    if f"ref_std_{horizon}" in pred.columns:  # the yardstick-relative score the strategy trades on
+        rel = pred.loc[frame.index]
+        spread = rel[f"ref_std_{horizon}"].replace(0.0, np.nan)
+        score_ic = spearman((rel[f"p_{horizon}"] - rel[f"ref_mean_{horizon}"]) / spread, ret)
     return {
+        "score_ic": score_ic,
         "n": len(frame), "up_rate": float(up.mean()), "mean_p": float(p.mean()),
         "accuracy": float(((p > 0.5) == (up > 0.5)).mean()),
         "always_up_accuracy": float(max(up.mean(), 1 - up.mean())),
