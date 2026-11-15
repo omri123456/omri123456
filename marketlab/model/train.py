@@ -143,6 +143,7 @@ def _fit_ensemble(kind: str, design: Design, matrix: np.ndarray, labels: Labels,
     z = torch.from_numpy(labels.z[rows].astype(np.float32))
     models = []
     for seed in mcfg["seeds"]:
+        torch.manual_seed(int(seed))  # the initial weights must depend on the seed alone
         model = build_model(kind, design, len(labels.horizons), mcfg)
         with torch.no_grad():  # start from the base rate instead of 50/50
             base = up.mean(dim=0).clamp(0.05, 0.95)

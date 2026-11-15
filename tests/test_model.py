@@ -48,3 +48,10 @@ def test_walk_forward_runs_and_keeps_test_years_out_of_training(bundle, cfg):
     # each fold was trained only on rows whose labels ended before its first test day
     first_2010 = bundle.panel.index.get_loc(pred.index[pred["fold"] == 2010][0])
     assert pred.loc[pred["fold"] == 2010, "train_rows"].iloc[0] <= first_2010 - 6 - (cfg["model"]["window"] - 1)
+
+
+def test_training_is_reproducible_whatever_ran_before(bundle, cfg):
+    first = train.walk_forward(bundle, cfg, kind="cnn", years=[2011], workers=1)
+    torch.randn(1000)  # disturb the global random state, as an earlier fold in the same worker would
+    second = train.walk_forward(bundle, cfg, kind="cnn", years=[2011], workers=1)
+    np.testing.assert_allclose(first["p_5"].to_numpy(), second["p_5"].to_numpy(), atol=1e-6)
