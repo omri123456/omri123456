@@ -1,0 +1,10 @@
+{
+ "data_last_day": "2026-11-13",
+ "panel_days": 5755,
+ "panel_features": 127,
+ "events": 118523,
+ "seeds": 5,
+ "first_test_year": 2012,
+ "last_test_year": 2026,
+ "parameters": 33702
+}

@@ -1,8 +1,13 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-# downloaded data and generated outputs are reproducible with: python -m marketlab fetch / train
+# downloaded data is reproducible with: python -m marketlab fetch
 /data/
-/runs/
-/models/
 /reports/
+# scratch runs and the bulky predictions of the comparison variants
+/runs/dev/
+/runs/first_run/
+/runs/latest/pred_cnn_market.csv
+/runs/latest/pred_cnn_rules.csv
+/runs/latest/pred_linear_all.csv
+/runs/latest/equity_*.csv
