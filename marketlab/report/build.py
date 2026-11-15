@@ -153,6 +153,9 @@ def build_report(cfg: dict, paths: Paths) -> Path:
                          f'<div class="tile-value">{html.escape(value)}</div>'
                          f'<div class="tile-note">{html.escape(note)}</div></div>')
     parts["TILES"] = "".join(tiles)
+    parts["HOLDOUT_NOTE"] = (f"המספרים למעלה הם מתקופת המבחן הנקייה ({int(cfg['walkforward']['dev_end_year']) + 1} ואילך), "
+                             "שלא שימשה בשום שלב של התכנון." if tiles else
+                             "דוח ביניים: שנות המבחן הנקי עוד לא חושבו, וכל המספרים כאן הם מתקופת הפיתוח בלבד.")
 
     # ------------------------------------------------------------------ equity curve
     equity = _read(run / "equity_full.csv", index_col=0, parse_dates=True)
@@ -256,12 +259,16 @@ def build_report(cfg: dict, paths: Paths) -> Path:
 
     # ------------------------------------------------------------------ facts line
     facts = []
-    if info:
-        facts = [f"נתונים עד {info.get('data_last_day', '?')}",
-                 f"{info.get('panel_days', '?'):,} ימי מסחר × {info.get('panel_features', '?')} ערוצים",
-                 f"{info.get('events', 0):,} אירועי חדשות",
-                 f"מודל של {info.get('parameters', '?'):,} פרמטרים × {info.get('seeds', '?')} אתחולים",
-                 f"שנות מבחן {info.get('first_test_year', '?')}–{info.get('last_test_year', '?')}"]
+    if info.get("data_last_day"):
+        facts.append(f"נתונים עד {info['data_last_day']}")
+    if info.get("panel_days"):
+        facts.append(f"{info['panel_days']:,} ימי מסחר × {info['panel_features']} ערוצים")
+    if info.get("events"):
+        facts.append(f"{info['events']:,} אירועי חדשות")
+    if info.get("parameters"):
+        facts.append(f"מודל של {info['parameters']:,} פרמטרים × {info.get('seeds', 1)} אתחולים")
+    if info.get("first_test_year"):
+        facts.append(f"שנות מבחן {info['first_test_year']}–{info['last_test_year']}")
     parts["FACTS"] = " · ".join(facts)
     parts["TARGET"] = html.escape(str(cfg["project"]["target"]))
     parts["DEV_END"] = str(cfg["walkforward"]["dev_end_year"])
@@ -272,9 +279,10 @@ def build_report(cfg: dict, paths: Paths) -> Path:
     page = TEMPLATE.read_text(encoding="utf-8")
     for key in ("VERDICT", "TILES", "EQUITY_TABLE", "STRATEGIES_HOLDOUT", "STRATEGIES_DEVELOPMENT", "YEARLY_TABLE",
                 "QUALITY", "EVENTS", "EVENTS_BASELINE", "FEATURES", "FEATURES_NOTE", "PAPER", "FACTS", "TARGET",
+                "HOLDOUT_NOTE",
                 "DEV_END", "HOLD_START", "HORIZON", "COST"):
-        page = page.replace("{{" + key + "}}", parts.get(key, '<p class="muted">אין נתונים עדיין.</p>'
-                                                         if key.isupper() and key not in ("FACTS",) else ""))
+        empty = "" if key in ("FACTS", "TILES", "EVENTS_BASELINE", "FEATURES_NOTE") else '<p class="muted">אין נתונים עדיין.</p>'
+        page = page.replace("{{" + key + "}}", parts.get(key) or empty)
     page = page.replace("{{DATA}}", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     paths.reports.mkdir(parents=True, exist_ok=True)
     out = paths.reports / "latest.html"
