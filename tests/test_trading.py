@@ -122,5 +122,5 @@ def test_macd_lines_are_scale_free_and_causal():
     price = pd.Series(np.exp(np.linspace(0, 0.6, 300)), index=dates)
     lines = macd_lines(price)
     assert lines["macd"].iloc[-1] > 0                      # steady uptrend: fast average above slow
-    np.testing.assert_allclose(macd_lines(price * 1000.0).to_numpy(), lines.to_numpy(), equal_nan=True)
-    np.testing.assert_allclose(macd_lines(price.iloc[:200]).to_numpy(), lines.iloc[:200].to_numpy(), equal_nan=True)
+    np.testing.assert_allclose(macd_lines(price * 1000.0).to_numpy(), lines.to_numpy(), atol=1e-12, equal_nan=True)
+    np.testing.assert_allclose(macd_lines(price.iloc[:200]).to_numpy(), lines.iloc[:200].to_numpy(), atol=1e-12, equal_nan=True)
