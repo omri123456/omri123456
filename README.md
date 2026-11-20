@@ -61,6 +61,23 @@ Yahoo Finance ו-Stooq לא זמינים מסביבת הענן, ולכן אין 
 - `marketlab/trading/broker.py`: עלות לכל עסקה, ריבית על מזומן, ואותו קוד בדיוק לסימולציה ההיסטורית
   ולחשבון הוירטואלי קדימה.
 
+## סקילי המסחר היומי (day-trader-skill)
+
+ב-`.claude/skills/` מותקנים 11 הסקילים של
+[Jakeschincariol/day-trader-skill](https://github.com/Jakeschincariol/day-trader-skill) (רישיון MIT,
+`DAY-TRADER-SKILL-LICENSE`): סורק גרפים, חדשות, תזמון כניסה ויציאה, Time Machine, ניהול סיכון ותקציב,
+התראות, ניתוח דוחות ומעקב אחרי עסקאות חברי קונגרס. הם עובדים על מניות בודדות ונתונים תוך-יומיים,
+ומשלימים את ה-CNN שעובד על המדד כולו בנתונים יומיים. הכלים כותבים לתיקייה `trader/`.
+
+```bash
+python3 .claude/skills/trader-scanner/scan.py universe     # רשימת כ-5,900 המניות
+python3 .claude/skills/trader-scanner/scan.py daily        # סריקה לפני הפתיחה -> trader/watchlist.json
+python3 .claude/skills/trader-news/news.py --no-sec        # כותרות ותנועה יומית לרשימת המעקב
+```
+
+שום כלי בחבילה לא שולח הוראה לברוקר בעצמו. ניתוח הדוחות ודיווחי 8-K של SEC דורשים שם ואימייל
+(`SEC_USER_AGENT`), ולכן הם כבויים כרגע.
+
 ## מה לא נשמר ב-git
 
 `data/`, `runs/`, `models/` ו-`reports/` נוצרים מחדש מהפקודות למעלה. `state/` (החשבון הוירטואלי) כן נשמר.

@@ -11,3 +11,5 @@ __pycache__/
 /runs/latest/pred_cnn_rules.csv
 /runs/latest/pred_linear_all.csv
 /runs/latest/equity_*.csv
+# day-trader skills: the symbol list is rebuilt with `scan.py universe`
+/trader/universe.txt
