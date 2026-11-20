@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 # Which feature groups share a CNN branch.
 BRANCHES = {
-    "market": ["market", "rules"],
+    "market": ["market", "rules", "breadth"],
     "rates": ["rates", "cross", "liquidity"],
     "macro": ["macro", "forecasts"],
     "news": ["news_idx", "wiki"],

@@ -1,0 +1,411 @@
+<meta name="dash-one-writer">
+<style>
+  .ml { display: flex; flex-direction: column; gap: var(--cds-gap-xl); color: var(--color-fg); font-family: var(--font-anthropic-sans); }
+  .ml section, .ml header { display: flex; flex-direction: column; gap: var(--cds-gap-md); min-width: 0; }
+  .ml h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.2; text-wrap: balance; }
+  .ml h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; text-wrap: balance; }
+  .ml p { margin: 0; max-width: 68ch; line-height: 1.6; }
+  .ml .ml-muted { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ml .ml-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-width: 0; }
+  .ml .ml-decision { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 2rem; line-height: 1.25; }
+  .ml .ml-pill { align-self: flex-start; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); padding: 2px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); }
+  .ml .ml-pill.ml-up { color: var(--color-ok); border-color: var(--color-ok); }
+  .ml .ml-pill.ml-down { color: var(--color-bad); border-color: var(--color-bad); }
+  .ml .ml-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--cds-gap-sm); }
+  .ml .ml-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .ml .ml-tile-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ml .ml-tile-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 1.7rem; line-height: 1.2; direction: ltr; text-align: right; }
+  .ml .ml-tile-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ml .ml-num { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+  .ml .ml-chart { position: relative; direction: ltr; min-height: 220px; width: 100%; }
+  .ml .ml-chart.ml-short { min-height: 150px; }
+  .ml .ml-chart svg { display: block; overflow: visible; }
+  .ml .ml-chart text { font-size: var(--cds-font-size-caption); fill: var(--cds-text-secondary); font-family: var(--font-anthropic-sans); }
+  .ml .ml-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ml .ml-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .ml .ml-key { display: inline-block; width: 16px; border-top: 2px solid; }
+  .ml .ml-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); box-shadow: var(--cds-shadow-popover); border-radius: var(--cds-radius); padding: 6px 9px; font-size: var(--cds-font-size-caption); line-height: 1.5; white-space: nowrap; direction: rtl; z-index: 2; }
+  .ml .ml-tip b { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+  .ml .ml-tip .ml-when { color: var(--cds-text-secondary); }
+  .ml .ml-scroll { overflow-x: auto; }
+  .ml table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-body); }
+  .ml th, .ml td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+  .ml thead th { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); white-space: normal; vertical-align: bottom; }
+  .ml td.ml-n { direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+  .ml .ml-pos { color: var(--color-ok); } .ml .ml-neg { color: var(--color-bad); }
+  .ml .ml-note { border-inline-start: 0; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); max-width: none; }
+  .ml a { color: inherit; text-underline-offset: 3px; }
+  .ml details summary { cursor: pointer; color: var(--color-fg-muted); }
+  .ml details ul { margin: var(--cds-gap-sm) 0 0; padding-inline-start: 20px; max-width: 68ch; line-height: 1.6; }
+</style>
+
+<div class="ml" dir="rtl" lang="he" data-read>
+  <header id="top">
+    <h1>MarketLab: מה עושים עם NASDAQ-100</h1>
+    <p>לפי סגירת <b class="ml-num" data-draw="signal-date" data-source="signal" data-field="date" data-row="0">—</b> המודל אומר: <b data-draw="signal-decision-inline" data-source="signal" data-field="decision_he" data-row="0">—</b>. במבחן הנקי הוא לא הרוויח יותר מלהחזיק את המדד, אבל ירד פחות בזמני משבר, ולכן זה כלי עזר ולא המלצה.</p>
+  </header>
+
+  <section id="decision">
+    <h2>ההחלטה להיום</h2>
+    <div class="ml-card">
+      <span class="ml-pill" data-draw="decision-pill">—</span>
+      <div class="ml-decision" data-draw="decision" data-source="signal" data-field="decision_he" data-row="0">—</div>
+      <p class="ml-muted">לביצוע בסגירת יום המסחר הבא. ההחלטה היא על המדד כולו (למשל דרך קרן שעוקבת אחריו), לא על מניות בודדות.</p>
+    </div>
+    <div class="ml-tiles">
+      <div class="ml-tile"><span class="ml-tile-label">חשיפה למדד עכשיו</span><span class="ml-tile-value" data-draw="weight-now" data-source="signal" data-field="weight_now" data-row="0">—</span><span class="ml-tile-note">0% = מזומן, 100% = מושקע במלואו</span></div>
+      <div class="ml-tile"><span class="ml-tile-label">חשיפה שהמודל רוצה</span><span class="ml-tile-value" data-draw="weight-target" data-source="signal" data-field="weight_target" data-row="0">—</span><span class="ml-tile-note">אחרי הסגירה הבאה</span></div>
+      <div class="ml-tile"><span class="ml-tile-label">סיכוי שהמדד יעלה ב-5 ימים</span><span class="ml-tile-value" data-draw="p-up" data-source="signal" data-field="p_up" data-row="0">—</span><span class="ml-tile-note">הרגיל של המודל בשנה האחרונה: <span class="ml-num" data-draw="p-usual" data-source="signal" data-field="p_usual" data-row="0">—</span></span></div>
+      <div class="ml-tile"><span class="ml-tile-label">אופטימיות יחסית</span><span class="ml-tile-value" data-draw="score" data-source="signal" data-field="score" data-row="0">—</span><span class="ml-tile-note">מתחת ל-‎-1 המודל מוריד חשיפה לחצי, מתחת ל-‎-2 יוצא</span></div>
+    </div>
+    <p class="ml-muted">לדוח המחקר המלא ולאנליסט שעונה על שאלות: <a href="https://claude.ai/artifact/8N42gxksPaxuciuEGUS3Y9" target="_blank" rel="noopener">דוח MarketLab</a>.</p>
+  </section>
+
+  <section id="outlook">
+    <h2>מה קרה אחרי ימים דומים בעבר</h2>
+    <p>חיפשנו את <span class="ml-num" data-draw="outlook-k" data-source="outlook" data-field="similar_days" data-row="1">—</span> הימים מ-2012 ואילך שהכי דומים להיום: מה המודל חשב, התנודתיות (VIX), כמה המדד ירד מהשיא, המומנטום, רוחב השוק וטון החדשות. אחריהם, המדד עלה תוך 20 ימי מסחר ב-<b class="ml-num" data-draw="outlook-p20" data-source="outlook" data-field="p_up" data-row="1">—</b> מהמקרים, לעומת <span class="ml-num" data-draw="outlook-base20" data-source="outlook" data-field="base_p_up" data-row="1">—</span> בכל הימים.</p>
+    <div class="ml-card">
+      <div class="ml-legend"><span><span class="ml-key" data-draw="key-0"></span>ימים דומים להיום</span><span><span class="ml-key" style="border-color: var(--cds-chart-muted)"></span>כל הימים מ-2012</span></div>
+      <div class="ml-chart ml-short" data-draw="outlook-ranges" data-source="outlook"></div>
+      <p class="ml-muted">הקו הדק: 80% מהמקרים. הקו העבה: 50% האמצעיים. הנקודה: האמצע (חציון).</p>
+    </div>
+    <p class="ml-note">בבדיקה לאחור על <span class="ml-num" data-draw="check-days" data-source="outlook_check" data-field="days" data-row="0">—</span> ימים, כשכל יום נחזה רק מימים שקדמו לו, השיטה הזו לא הבחינה בין ימים טובים לרעים (מתאם <span class="ml-num" data-draw="check-ic" data-source="outlook_check" data-field="ic20" data-row="0">—</span>), וטווח ה-80% תפס רק <span class="ml-num" data-draw="check-cover" data-source="outlook_check" data-field="band_80_coverage" data-row="0">—</span> מהתוצאות. לכן זה הקשר היסטורי, לא תחזית: העתיד יכול להיות רחב יותר מהטווח הזה.</p>
+    <h2 id="similar">הימים הכי דומים להיום</h2>
+    <div class="ml-scroll">
+      <table data-source="similar_days" data-row-key="date">
+        <thead><tr><th data-field="date">תאריך</th><th data-field="fwd5">המדד 5 ימים אחרי</th><th data-field="fwd20">המדד 20 ימים אחרי</th><th data-field="score">אופטימיות המודל</th><th data-field="vix_z">VIX ביחס לשנה</th><th data-field="drawdown">מרחק מהשיא</th></tr></thead>
+        <tbody data-draw="similar-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="breadth">
+    <h2>מצב השוק מבפנים: מניות המדד</h2>
+    <p>101 מניות ה-NASDAQ-100, בכללים של סורק ה-day-trader. כשרוב המניות מתחת לממוצע 200 הימים שלהן, הירידה רחבה ולא רק של כמה ענקיות.</p>
+    <div class="ml-tiles">
+      <div class="ml-tile"><span class="ml-tile-label">מעל ממוצע 200 יום</span><span class="ml-tile-value" data-draw="br-ma200" data-source="breadth_now" data-field="above_ma200" data-row="0">—</span><span class="ml-tile-note">בממוצע מאז 2007: <span class="ml-num" data-draw="br-ma200-avg" data-source="breadth_avg" data-field="above_ma200" data-row="0">—</span></span></div>
+      <div class="ml-tile"><span class="ml-tile-label">מעל ממוצע 50 יום</span><span class="ml-tile-value" data-draw="br-ma50" data-source="breadth_now" data-field="above_ma50" data-row="0">—</span><span class="ml-tile-note">בממוצע: <span class="ml-num" data-draw="br-ma50-avg" data-source="breadth_avg" data-field="above_ma50" data-row="0">—</span></span></div>
+      <div class="ml-tile"><span class="ml-tile-label">במכירת יתר (RSI מתחת ל-30)</span><span class="ml-tile-value" data-draw="br-oversold" data-source="breadth_now" data-field="oversold" data-row="0">—</span><span class="ml-tile-note">בממוצע: <span class="ml-num" data-draw="br-oversold-avg" data-source="breadth_avg" data-field="oversold" data-row="0">—</span></span></div>
+      <div class="ml-tile"><span class="ml-tile-label">בפריצה לשיא 20 יום</span><span class="ml-tile-value" data-draw="br-breakout" data-source="breadth_now" data-field="breakout_20d" data-row="0">—</span><span class="ml-tile-note">בממוצע: <span class="ml-num" data-draw="br-breakout-avg" data-source="breadth_avg" data-field="breakout_20d" data-row="0">—</span></span></div>
+    </div>
+    <div class="ml-card">
+      <div class="ml-legend"><span><span class="ml-key" data-draw="key-0"></span>מעל ממוצע 200 יום</span><span><span class="ml-key" data-draw="key-1"></span>במכירת יתר</span></div>
+      <div class="ml-chart" data-draw="breadth-chart" data-source="breadth"></div>
+      <p class="ml-muted">ארבע השנים האחרונות, כל יום מסחר חמישי. הרשימה היא של חברי המדד היום, ולכן העבר מחושב רק על מי ששרד.</p>
+    </div>
+  </section>
+
+  <section id="stocks">
+    <h2>מניות המדד שתואמות כלל של הסורק היום</h2>
+    <p>התאמה לכלל איננה המלצה לקנות. בעמודה האחרונה: מה עשו בעבר מניות המדד באותו כלל, כשהמודל היה <b data-draw="regime-today" data-source="regime_today" data-field="regime_he" data-row="0">—</b> כמו היום (2019 ואילך, 20 ימי מסחר, מעבר למדד).</p>
+    <div class="ml-scroll">
+      <table data-source="setups_today" data-row-key="symbol,setup">
+        <thead><tr><th data-field="symbol">מניה</th><th data-field="company">חברה</th><th data-field="setup_he">הכלל</th><th data-field="close">מחיר סגירה</th><th data-field="rsi">RSI</th><th data-source="setups_today_record" data-field="mean_excess_20d">בעבר, מעבר למדד</th><th data-source="setups_today_record" data-field="events">מקרים</th></tr></thead>
+        <tbody data-draw="setup-rows"></tbody>
+      </table>
+    </div>
+    <h2 id="record">האם הכללים עבדו טוב יותר כשהמודל היה אופטימי?</h2>
+    <p>תשואה ממוצעת של המניה ב-20 ימי המסחר שאחרי הכלל, מעבר למדד, לפי מה שהמודל אמר באותו יום. במבחן הנקי (2019 ואילך):</p>
+    <div class="ml-scroll">
+      <table>
+        <thead><tr><th>הכלל</th><th>המודל פסימי</th><th>המודל ניטרלי</th><th>המודל אופטימי</th></tr></thead>
+        <tbody data-draw="record-rows" data-source="setup_record"></tbody>
+      </table>
+    </div>
+    <p class="ml-note">בתקופת הפיתוח (עד 2018) התאוששות ממכירת יתר עבדה כמעט רק כשהמודל היה אופטימי. במבחן הנקי הדפוס הזה לא חזר: היא עבדה גם כשהמודל פסימי ונכשלה כשהיה ניטרלי. לכן השילוב בין הכללים למודל עדיין לא הוכח. המניות הן חברי המדד היום, וזה מחמיא לתוצאות העבר, במיוחד לכללי מכירת יתר.</p>
+  </section>
+
+  <section id="trust">
+    <h2>כמה אפשר לסמוך על המודל</h2>
+    <p>מבחן נקי מ-2019: כל שנה נחזתה על ידי מודל שאומן רק על השנים שלפניה, עם עלויות מסחר.</p>
+    <div class="ml-scroll">
+      <table data-source="scorecard_holdout" data-row-key="strategy">
+        <thead><tr><th data-field="strategy_he">אסטרטגיה</th><th data-field="cagr">תשואה שנתית</th><th data-field="sharpe">Sharpe</th><th data-field="max_drawdown">ירידה מקסימלית</th><th data-field="avg_exposure">חשיפה ממוצעת</th><th data-field="timing_pvalue">p תזמון</th></tr></thead>
+        <tbody data-draw="score-rows"></tbody>
+      </table>
+    </div>
+    <p class="ml-muted">Sharpe: תשואה ביחס לסיכון, גבוה יותר טוב יותר. p תזמון מתחת ל-0.05: התזמון כנראה לא מקרי.</p>
+    <div class="ml-card">
+      <div class="ml-legend"><span><span class="ml-key" data-draw="key-0"></span>המודל</span><span><span class="ml-key" data-draw="key-1"></span>קנה והחזק</span></div>
+      <div class="ml-chart" data-draw="track-chart" data-source="track"></div>
+      <p class="ml-muted">שווי של 100 מ-2012, בסולם לוגריתמי. ב-2022 המודל ירד פחות; ב-2020 הוא פספס חלק גדול מהעלייה.</p>
+    </div>
+  </section>
+
+  <section id="paper">
+    <h2>החשבון הוירטואלי</h2>
+    <p>100,000$ וירטואליים שעוקבים אחרי ההחלטות של המודל כל יום מסחר, מ-13.11.2026.</p>
+    <div class="ml-tiles">
+      <div class="ml-tile"><span class="ml-tile-label">שווי החשבון</span><span class="ml-tile-value" data-draw="paper-equity" data-source="signal" data-field="equity" data-row="0">—</span><span class="ml-tile-note">אחרי עלויות וריבית</span></div>
+      <div class="ml-tile"><span class="ml-tile-label">תשואה מאז הפתיחה</span><span class="ml-tile-value" data-draw="paper-ret" data-source="signal" data-field="return_pct" data-row="0">—</span><span class="ml-tile-note">המדד באותה תקופה: <span class="ml-num" data-draw="paper-index" data-source="signal" data-field="index_return_pct" data-row="0">—</span></span></div>
+    </div>
+    <div class="ml-scroll">
+      <table data-source="paper" data-row-key="date">
+        <thead><tr><th data-field="date">יום</th><th data-field="price">NASDAQ-100</th><th data-field="equity">שווי החשבון</th><th data-field="weight">חשיפה</th></tr></thead>
+        <tbody data-draw="paper-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <details id="glossary">
+    <summary>מה המילים אומרות</summary>
+    <ul>
+      <li>חשיפה: כמה מהחשבון מושקע במדד. השאר במזומן שצובר ריבית.</li>
+      <li>אופטימיות יחסית: כמה הסיכוי שהמודל נותן היום גבוה או נמוך מהרגיל שלו בשנה האחרונה, ביחידות של סטיית תקן.</li>
+      <li>RSI: מדד מומנטום בין 0 ל-100. מתחת ל-30 נחשב מכירת יתר.</li>
+      <li>מבחן נקי: שנים שלא שימשו לבניית המודל. רק הן מראות מה המודל יודע באמת.</li>
+      <li>הלוח מתעדכן אוטומטית בכל בוקר מסחר בארה"ב.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+  window.ml = (function () {
+    const pct0 = d3.format('.0%'), pct1 = d3.format('.1%'), spct1 = d3.format('+.1%'), spct2 = d3.format('+.2%');
+    const num0 = d3.format(',.0f'), num2 = d3.format(',.2f'), sgn2 = d3.format('+.2f');
+    const parse = d3.utcParse('%Y-%m-%d'), fmtDate = d3.utcFormat('%d.%m.%Y'), fmtMonth = d3.utcFormat('%m.%Y');
+    function rows(id) { const d = dash.data(id); return d.status === 'ok' && Array.isArray(d.data) && d.data.length ? d.data : null; }
+    function first(id) { const r = rows(id); return r ? r[0] : null; }
+    function put(el, text) { el.textContent = text == null ? '—' : text; }
+    function cell(tr, text, cls) { const td = document.createElement('td'); td.textContent = text == null ? '—' : text; if (cls) td.className = cls; tr.appendChild(td); return td; }
+    function failed(el, id, what) { const d = dash.data(id); if (d.status === 'error') { put(el, 'לא נטען: ' + what); return true; } return false; }
+    function tip(container) {
+      const t = document.createElement('div'); t.className = 'ml-tip'; t.hidden = true; container.appendChild(t);
+      return {
+        show(lines, x, y) {
+          t.replaceChildren(...lines.map((l, i) => { const p = document.createElement('div'); if (i === 0) p.className = 'ml-when';
+            if (Array.isArray(l)) { const b = document.createElement('b'); b.textContent = l[0]; p.append(b, ' ' + l[1]); } else p.textContent = l; return p; }));
+          t.hidden = false;
+          const w = t.offsetWidth, W = container.clientWidth;
+          t.style.left = Math.max(0, Math.min(W - w, x + 12)) + 'px'; t.style.top = Math.max(0, y) + 'px';
+        },
+        hide() { t.hidden = true; }
+      };
+    }
+    return { pct0, pct1, spct1, spct2, num0, num2, sgn2, parse, fmtDate, fmtMonth, rows, first, put, cell, failed, tip };
+  })();
+
+  dash.calc('breadth_now', { title: 'Breadth today', description: 'The latest row of the breadth series.',
+    inputs: ['breadth'], fn: (breadth) => breadth.length ? [breadth[breadth.length - 1]] : [] });
+  dash.calc('breadth_avg', { title: 'Breadth on average', description: 'Average of each breadth share over the whole series (2007 on).',
+    inputs: ['breadth'], fn: (breadth) => {
+      const mean = (k) => { const v = breadth.map((r) => Number(r[k])).filter((x) => Number.isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+      return breadth.length ? [{ above_ma200: mean('above_ma200'), above_ma50: mean('above_ma50'), oversold: mean('oversold'), breakout_20d: mean('breakout_20d') }] : [];
+    } });
+  dash.calc('regime_today', { title: "The model's mood today", description: 'Pessimistic below -0.5, optimistic above +0.5, from the relative score in the signal.',
+    inputs: ['signal'], fn: (signal) => {
+      if (!signal.length || signal[0].score == null) return [];
+      const s = Number(signal[0].score), regime = s < -0.5 ? 'pessimistic' : s > 0.5 ? 'optimistic' : 'neutral';
+      return [{ regime, regime_he: { pessimistic: 'פסימי', neutral: 'ניטרלי', optimistic: 'אופטימי' }[regime] }];
+    } });
+  dash.calc('setups_today_record', { title: 'Past record of today\'s setups', description: 'For each stock that matched a rule today: the holdout (2019 on) 20-day return over the index of that rule when the model was in today\'s mood.',
+    inputs: ['setups_today', 'setup_record', 'signal'], fn: (setupsToday, setupRecord, signal) => {
+      if (!signal.length || signal[0].score == null) return [];
+      const s = Number(signal[0].score), regime = s < -0.5 ? 'pessimistic' : s > 0.5 ? 'optimistic' : 'neutral';
+      return setupsToday.map((r) => {
+        const m = setupRecord.find((x) => x.period === 'holdout' && x.setup === r.setup && x.regime === regime);
+        return { symbol: r.symbol, setup: r.setup, mean_excess_20d: m ? m.mean_excess_20d : null, events: m ? m.events : null };
+      });
+    } });
+  dash.calc('scorecard_holdout', { title: 'Scorecard, clean test', description: 'Rows of the scorecard for the holdout years (2019 on), best Sharpe first.',
+    inputs: ['scorecard'], fn: (scorecard) => scorecard.filter((r) => r.period === 'holdout').sort((a, b) => b.sharpe - a.sharpe) });
+</script>
+
+<script>
+  const M = window.ml;
+  dash.draw('key-0', (el) => { el.style.borderColor = dash.colors[0]; });
+  dash.draw('key-1', (el) => { el.style.borderColor = dash.colors[1]; });
+
+  dash.draw('signal-date', (el) => { const s = M.first('signal'); M.put(el, s ? M.fmtDate(M.parse(s.date)) : null); });
+  dash.draw('signal-decision-inline', (el) => { const s = M.first('signal'); M.put(el, s ? s.decision_he : null); });
+  dash.draw('decision', (el) => { const s = M.first('signal'); if (!s && M.failed(el, 'signal', 'ההחלטה')) return; M.put(el, s ? s.decision_he : null); });
+  dash.draw('decision-pill', (el) => {
+    const s = M.first('signal');
+    const words = { buy: 'כניסה', add: 'הגדלה', reduce: 'הקטנה', exit: 'יציאה', hold: 'בלי שינוי' };
+    M.put(el, s ? words[s.decision] || s.decision : null);
+    el.classList.toggle('ml-up', !!s && (s.decision === 'buy' || s.decision === 'add'));
+    el.classList.toggle('ml-down', !!s && (s.decision === 'reduce' || s.decision === 'exit'));
+  });
+  dash.draw('weight-now', (el) => { const s = M.first('signal'); M.put(el, s ? M.pct0(s.weight_now) : null); });
+  dash.draw('weight-target', (el) => { const s = M.first('signal'); M.put(el, s ? M.pct0(s.weight_target) : null); });
+  dash.draw('p-up', (el) => { const s = M.first('signal'); M.put(el, s ? M.pct1(s.p_up) : null); });
+  dash.draw('p-usual', (el) => { const s = M.first('signal'); M.put(el, s && s.p_usual != null ? M.pct1(s.p_usual) : null); });
+  dash.draw('score', (el) => { const s = M.first('signal'); M.put(el, s && s.score != null ? M.sgn2(s.score) : null); });
+  dash.draw('paper-equity', (el) => { const s = M.first('signal'); M.put(el, s ? '$' + M.num0(s.equity) : null); });
+  dash.draw('paper-ret', (el) => { const s = M.first('signal'); M.put(el, s ? d3.format('+.2f')(s.return_pct) + '%' : null); });
+  dash.draw('paper-index', (el) => { const s = M.first('signal'); M.put(el, s ? d3.format('+.2f')(s.index_return_pct) + '%' : null); });
+
+  // ---------------------------------------------------------------- outlook
+  dash.draw('outlook-k', (el) => { const r = M.rows('outlook'); M.put(el, r && r[1] ? r[1].similar_days : null); });
+  dash.draw('outlook-p20', (el) => { const r = M.rows('outlook'); M.put(el, r && r[1] ? M.pct0(r[1].p_up) : null); });
+  dash.draw('outlook-base20', (el) => { const r = M.rows('outlook'); M.put(el, r && r[1] ? M.pct0(r[1].base_p_up) : null); });
+  dash.draw('check-days', (el) => { const c = M.first('outlook_check'); M.put(el, c ? M.num0(c.days) : null); });
+  dash.draw('check-ic', (el) => { const c = M.first('outlook_check'); M.put(el, c && c.ic20 != null ? d3.format('.2f')(c.ic20) : null); });
+  dash.draw('check-cover', (el) => { const c = M.first('outlook_check'); M.put(el, c && c.band_80_coverage != null ? M.pct0(c.band_80_coverage) : null); });
+
+  dash.draw('outlook-ranges', (el) => {
+    const r = M.rows('outlook');
+    if (!r) { if (!M.failed(el, 'outlook', 'הטווחים')) M.put(el, '—'); return; }
+    el.replaceChildren();
+    const W = Math.max(280, el.clientWidth), rowH = 54, H = rowH * r.length + 30, m = { l: 92, r: 16, t: 8, b: 24 };
+    const all = r.flatMap((d) => [d.q10, d.q90, d.base_q10, d.base_q90]);
+    const x = d3.scaleLinear().domain([Math.min(0, d3.min(all)), Math.max(0, d3.max(all))]).nice().range([m.l, W - m.r]);
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img')
+      .attr('aria-label', 'Range of the index return after days like today, next to all days');
+    svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(Math.max(3, Math.floor(W / 110))).tickFormat(d3.format('+.0%')))
+      .call((g) => g.select('.domain').attr('stroke', 'var(--cds-chart-axis)')).call((g) => g.selectAll('line').attr('stroke', 'var(--cds-chart-axis)'));
+    svg.append('line').attr('x1', x(0)).attr('x2', x(0)).attr('y1', m.t).attr('y2', H - m.b).attr('stroke', 'var(--cds-chart-reference)');
+    const t = M.tip(el);
+    r.forEach((d, i) => {
+      const y = m.t + i * rowH + 14;
+      svg.append('text').attr('x', 4).attr('y', y + 6).text(d.horizon_days + ' ימים אחרי');
+      [[y, d.q10, d.q25, d.q50, d.q75, d.q90, dash.colors[0]], [y + 18, d.base_q10, d.base_q25, d.base_q50, d.base_q75, d.base_q90, 'var(--cds-chart-muted)']]
+        .forEach(([yy, a, b, c, e, f, col]) => {
+          svg.append('line').attr('x1', x(a)).attr('x2', x(f)).attr('y1', yy).attr('y2', yy).style('stroke', col).attr('stroke-width', 2).attr('stroke-linecap', 'round');
+          svg.append('line').attr('x1', x(b)).attr('x2', x(e)).attr('y1', yy).attr('y2', yy).style('stroke', col).attr('stroke-width', 8).attr('stroke-linecap', 'round');
+          svg.append('circle').attr('cx', x(c)).attr('cy', yy).attr('r', 5).style('fill', col).attr('stroke', 'var(--color-bg)').attr('stroke-width', 2);
+        });
+      svg.append('rect').attr('x', m.l).attr('y', y - 12).attr('width', W - m.l - m.r).attr('height', 40).attr('fill', 'transparent')
+        .on('pointermove', (ev) => { const [px, py] = d3.pointer(ev, el); t.show([d.horizon_days + ' ימי מסחר אחרי',
+          [M.spct1(d.q50), 'חציון בימים דומים'], [M.spct1(d.q10) + ' עד ' + M.spct1(d.q90), '80% מהמקרים'],
+          [M.pct0(d.p_up), 'מהמקרים המדד עלה'], [M.pct0(d.base_p_up), 'בכל הימים']], px, py - 10); })
+        .on('pointerleave', () => t.hide());
+    });
+  });
+
+  dash.draw('similar-rows', (el) => {
+    const r = M.rows('similar_days');
+    el.replaceChildren();
+    if (!r) return;
+    r.forEach((d) => {
+      const tr = document.createElement('tr');
+      M.cell(tr, M.fmtDate(M.parse(d.date)), 'ml-n');
+      M.cell(tr, M.spct1(d.fwd5), 'ml-n ' + (d.fwd5 >= 0 ? 'ml-pos' : 'ml-neg'));
+      M.cell(tr, M.spct1(d.fwd20), 'ml-n ' + (d.fwd20 >= 0 ? 'ml-pos' : 'ml-neg'));
+      M.cell(tr, M.sgn2(d.score), 'ml-n');
+      M.cell(tr, d.vix_z == null ? null : M.sgn2(d.vix_z), 'ml-n');
+      M.cell(tr, d.drawdown == null ? null : M.pct1(d.drawdown), 'ml-n');
+      el.appendChild(tr);
+    });
+  });
+
+  // ---------------------------------------------------------------- breadth
+  [['br-ma200', 'above_ma200'], ['br-ma50', 'above_ma50'], ['br-oversold', 'oversold'], ['br-breakout', 'breakout_20d']].forEach(([name, key]) => {
+    dash.draw(name, (el) => { const b = M.first('breadth_now'); M.put(el, b && b[key] != null ? M.pct0(b[key]) : null); });
+    dash.draw(name + '-avg', (el) => { const b = M.first('breadth_avg'); M.put(el, b && b[key] != null ? M.pct0(b[key]) : null); });
+  });
+
+  function lineChart(el, data, series, opts) {
+    el.replaceChildren();
+    const W = Math.max(280, el.clientWidth), H = opts.height || 240, m = { l: 48, r: 14, t: 10, b: 26 };
+    const x = d3.scaleUtc().domain(d3.extent(data, (d) => d.t)).range([m.l, W - m.r]);
+    const vals = data.flatMap((d) => series.map((s) => d[s.key])).filter((v) => Number.isFinite(v));
+    const y = (opts.log ? d3.scaleLog() : d3.scaleLinear()).domain(opts.domain || d3.extent(vals)).range([H - m.b, m.t]);
+    if (!opts.domain && !opts.log) y.nice();
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', opts.label);
+    const yTicks = opts.log ? [50, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000].filter((v) => v >= y.domain()[0] && v <= y.domain()[1]) : y.ticks(5);
+    svg.append('g').selectAll('line').data(yTicks).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(yTicks).join('text').attr('x', m.l - 6).attr('y', (v) => y(v) + 4).attr('text-anchor', 'end').text(opts.yFormat);
+    svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(Math.max(3, Math.floor(W / 120))).tickSizeOuter(0))
+      .call((g) => g.select('.domain').attr('stroke', 'var(--cds-chart-axis)')).call((g) => g.selectAll('line').attr('stroke', 'var(--cds-chart-axis)'));
+    if (opts.reference != null) svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(opts.reference)).attr('y2', y(opts.reference)).attr('stroke', 'var(--cds-chart-reference)');
+    series.forEach((s, i) => {
+      const line = d3.line().defined((d) => Number.isFinite(d[s.key])).x((d) => x(d.t)).y((d) => y(d[s.key]));
+      svg.append('path').datum(data).attr('d', line).attr('fill', 'none').style('stroke', dash.colors[i]).attr('stroke-width', 2).attr('stroke-linejoin', 'round');
+      const last = data[data.length - 1];
+      if (Number.isFinite(last[s.key])) svg.append('circle').attr('cx', x(last.t)).attr('cy', y(last[s.key])).attr('r', 4).style('fill', dash.colors[i]).attr('stroke', 'var(--color-bg)').attr('stroke-width', 2);
+    });
+    const cross = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).attr('stroke', 'var(--cds-chart-axis)').attr('visibility', 'hidden');
+    const t = M.tip(el), bisect = d3.bisector((d) => d.t).center;
+    svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.l - m.r).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+      .on('pointermove', (ev) => {
+        const [px] = d3.pointer(ev, svg.node()), d = data[bisect(data, x.invert(px * (W / svg.node().getBoundingClientRect().width)))];
+        if (!d) return;
+        cross.attr('x1', x(d.t)).attr('x2', x(d.t)).attr('visibility', 'visible');
+        const [cx, cy] = d3.pointer(ev, el);
+        t.show([M.fmtDate(d.t), ...series.map((s) => [opts.tipFormat(d[s.key]), s.name])], cx, 0);
+      })
+      .on('pointerleave', () => { cross.attr('visibility', 'hidden'); t.hide(); });
+  }
+
+  dash.draw('breadth-chart', (el) => {
+    const r = M.rows('breadth');
+    if (!r) { if (!M.failed(el, 'breadth', 'הגרף')) M.put(el, '—'); return; }
+    const data = r.map((d) => ({ t: M.parse(d.date), a: Number(d.above_ma200), o: Number(d.oversold) }));
+    const cut = d3.utcYear.offset(data[data.length - 1].t, -4);
+    lineChart(el, data.filter((d) => d.t >= cut), [{ key: 'a', name: 'מעל ממוצע 200 יום' }, { key: 'o', name: 'במכירת יתר' }],
+      { domain: [0, 1], reference: 0.5, yFormat: d3.format('.0%'), tipFormat: d3.format('.0%'), label: 'Share of NASDAQ-100 members above their 200-day average and oversold, last four years' });
+  });
+
+  // ---------------------------------------------------------------- stocks
+  dash.draw('regime-today', (el) => { const g = M.first('regime_today'); M.put(el, g ? g.regime_he : null); });
+  dash.draw('setup-rows', (el) => {
+    const r = M.rows('setups_today'), rec = dash.data('setups_today_record');
+    el.replaceChildren();
+    if (!r) { const d = dash.data('setups_today'); if (d.status === 'ok') { const tr = document.createElement('tr'); const td = M.cell(tr, 'אף מניה במדד לא תאמה כלל היום.'); td.colSpan = 7; el.appendChild(tr); } return; }
+    const byKey = new Map((rec.status === 'ok' && Array.isArray(rec.data) ? rec.data : []).map((x) => [x.symbol + ',' + x.setup, x]));
+    r.slice().sort((a, b) => a.setup.localeCompare(b.setup) || a.symbol.localeCompare(b.symbol)).forEach((d) => {
+      const tr = document.createElement('tr'), h = byKey.get(d.symbol + ',' + d.setup);
+      tr.dataset.key = encodeURIComponent(d.symbol) + ',' + encodeURIComponent(d.setup);
+      M.cell(tr, d.symbol); M.cell(tr, d.company); M.cell(tr, d.setup_he);
+      M.cell(tr, '$' + M.num2(d.close), 'ml-n'); M.cell(tr, d3.format('.1f')(d.rsi), 'ml-n');
+      M.cell(tr, h && h.mean_excess_20d != null ? M.spct1(h.mean_excess_20d) : null, 'ml-n ' + (h && h.mean_excess_20d >= 0 ? 'ml-pos' : 'ml-neg'));
+      M.cell(tr, h && h.events != null ? M.num0(h.events) : null, 'ml-n');
+      el.appendChild(tr);
+    });
+  });
+  dash.draw('record-rows', (el) => {
+    const r = M.rows('setup_record');
+    el.replaceChildren();
+    if (!r) return;
+    const order = ['oversold', 'oversold_bounce', 'breakout_20d', 'bull_flag', 'reclaim_ma20', 'all'];
+    order.forEach((setup) => {
+      const part = r.filter((x) => x.period === 'holdout' && x.setup === setup);
+      if (!part.length) return;
+      const tr = document.createElement('tr');
+      M.cell(tr, part[0].setup_he);
+      ['pessimistic', 'neutral', 'optimistic'].forEach((reg) => {
+        const m = part.find((x) => x.regime === reg);
+        const td = M.cell(tr, m ? M.spct1(m.mean_excess_20d) : null, 'ml-n ' + (m && m.mean_excess_20d >= 0 ? 'ml-pos' : 'ml-neg'));
+        if (m) { td.dataset.source = 'setup_record'; td.dataset.field = 'mean_excess_20d';
+          td.dataset.where = 'period=holdout&setup=' + encodeURIComponent(setup) + '&regime=' + reg;
+          td.title = M.num0(m.events) + ' מקרים'; }
+      });
+      el.appendChild(tr);
+    });
+  });
+
+  // ---------------------------------------------------------------- trust
+  dash.draw('score-rows', (el) => {
+    const d = dash.data('scorecard_holdout');
+    el.replaceChildren();
+    if (d.status !== 'ok' || !Array.isArray(d.data)) return;
+    d.data.forEach((s) => {
+      const tr = document.createElement('tr');
+      M.cell(tr, s.strategy_he); M.cell(tr, M.pct1(s.cagr), 'ml-n'); M.cell(tr, d3.format('.2f')(s.sharpe), 'ml-n');
+      M.cell(tr, M.pct1(s.max_drawdown), 'ml-n'); M.cell(tr, M.pct0(s.avg_exposure), 'ml-n');
+      M.cell(tr, s.timing_pvalue == null ? null : d3.format('.2f')(s.timing_pvalue), 'ml-n');
+      el.appendChild(tr);
+    });
+  });
+  dash.draw('track-chart', (el) => {
+    const r = M.rows('track');
+    if (!r) { if (!M.failed(el, 'track', 'הגרף')) M.put(el, '—'); return; }
+    const data = r.map((d) => ({ t: M.parse(d.date), m: Number(d.model), b: Number(d.buy_and_hold) }));
+    lineChart(el, data, [{ key: 'm', name: 'המודל' }, { key: 'b', name: 'קנה והחזק' }],
+      { log: true, yFormat: d3.format(',.0f'), tipFormat: d3.format(',.0f'), label: 'Value of 100 since 2012: the model against buy and hold, log scale' });
+  });
+
+  // ---------------------------------------------------------------- paper account
+  dash.draw('paper-rows', (el) => {
+    const r = M.rows('paper');
+    el.replaceChildren();
+    if (!r) return;
+    r.slice().reverse().slice(0, 15).forEach((d) => {
+      const tr = document.createElement('tr');
+      M.cell(tr, M.fmtDate(M.parse(d.date)), 'ml-n'); M.cell(tr, M.num2(d.price), 'ml-n');
+      M.cell(tr, '$' + M.num0(d.equity), 'ml-n'); M.cell(tr, M.pct0(d.weight), 'ml-n');
+      el.appendChild(tr);
+    });
+  });
+</script>

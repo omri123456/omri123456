@@ -22,7 +22,9 @@ from .align import (align_available, align_daily, available_dates, bucket_to_cal
 log = logging.getLogger(__name__)
 
 GROUPS = ["market", "rates", "cross", "liquidity", "macro", "forecasts", "news_idx", "wiki", "calendar"]
-EXTRA_GROUPS = ["rules"]  # classic trading-rule signals: only used by model variants that ask for them
+EXTRA_GROUPS = ["rules", "breadth"]  # only used by model variants that ask for them
+# rules: classic trading rules on the index; breadth: the day-trader scanner's rules over the
+# NASDAQ-100 members (today's members, so the past is computed on survivors)
 ANNUAL = np.sqrt(252.0)
 
 
@@ -335,6 +337,13 @@ def build_panel(raw: RawData, cfg: dict) -> PanelBundle:
 
     # ------------------------------------------------------------------ calendar
     _calendar_features(b, raw)
+
+    # ------------------------------------------------------------------ market breadth (day-trader scanner rules)
+    if raw.stock_closes is not None and len(raw.stock_closes):
+        from ..stocks.setups import breadth as stock_breadth
+        br = stock_breadth(raw.stock_closes)
+        for col in [c for c in br.columns if c != "br_members"]:
+            b.add(col, align_daily(br[col], calendar, 0, limit=3), "breadth")
 
     # ------------------------------------------------------------------ classic trading rules
     signals = rules.rule_signals(price)

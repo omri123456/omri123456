@@ -26,6 +26,7 @@ class RawData:
     spf: pd.DataFrame | None = None
     fomc: pd.DataFrame | None = None
     events: pd.DataFrame | None = None  # columns: date, category, text
+    stock_closes: pd.DataFrame | None = None  # NASDAQ-100 members, daily closes (dates x symbols)
 
     def truncate(self, last_date) -> "RawData":
         """Copy of the bundle without any observation dated after last_date (for leak tests)."""
@@ -43,7 +44,7 @@ class RawData:
             fred={k: cut(v) for k, v in self.fred.items()},
             sentiment=cut(self.sentiment), gpr=cut(self.gpr), spf=cut(self.spf),
             fomc=self.fomc,  # the meeting schedule is published ahead of time
-            events=events,
+            events=events, stock_closes=cut(self.stock_closes),
         )
 
 
@@ -143,6 +144,9 @@ def fetch_everything(cfg: dict, paths: Paths, *, max_age_hours: float | None = 1
 
 def load_raw(cfg: dict, paths: Paths) -> RawData:
     raw = RawData()
+    stock_file = paths.raw / "stocks" / "closes.csv.gz"
+    if stock_file.exists():
+        raw.stock_closes = pd.read_csv(stock_file, index_col=0, parse_dates=True)
     for sid in cfg["fred"]:
         series = fred.load_series(sid, paths.fred)
         if series is not None and len(series):

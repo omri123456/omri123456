@@ -26,7 +26,8 @@ log = logging.getLogger(__name__)
 # Model variants compared in every run. MAIN is the one the paper account trades.
 VARIANTS = {
     "cnn_all": {"kind": "cnn", "groups": GROUPS, "title": "CNN, all information"},
-    "cnn_rules": {"kind": "cnn", "groups": GROUPS + EXTRA_GROUPS, "title": "CNN, all information + classic rule signals"},
+    "cnn_rules": {"kind": "cnn", "groups": GROUPS + ["rules"], "title": "CNN, all information + classic rule signals"},
+    "cnn_breadth": {"kind": "cnn", "groups": GROUPS + ["breadth"], "title": "CNN, all information + scanner breadth"},
     "cnn_market": {"kind": "cnn", "groups": ["market", "calendar"], "title": "CNN, prices only"},
     "linear_all": {"kind": "linear", "groups": GROUPS, "title": "Linear baseline, all information"},
 }
@@ -49,6 +50,12 @@ def load_bundle(cfg: dict, paths: Paths) -> tuple[store.RawData, PanelBundle]:
 # ---------------------------------------------------------------------------------------------
 def do_fetch(cfg: dict, paths: Paths) -> dict:
     summary = store.fetch_everything(cfg, paths)
+    try:  # NASDAQ-100 members' daily bars, through the day-trader skill's Yahoo client
+        from .stocks import history
+        summary["stocks"] = history.fetch(paths)
+    except Exception as exc:  # optional: the index model does not need it
+        summary["stocks"] = f"failed: {exc}"
+        log.warning("stock history not refreshed: %s", exc)
     log.info("fetch: %s", json.dumps(summary, default=str))
     return summary
 
@@ -309,6 +316,16 @@ def do_signal(cfg: dict, paths: Paths, scan: bool = True) -> dict:
     result = sig.build_signal(state, pred, cfg, breadth)
     sig.save_signal(paths, result)
     return result
+
+
+def do_dashboard(cfg: dict, paths: Paths) -> dict:
+    """Data files for the decision dashboard (reports/dashboard)."""
+    from . import dashboard
+    _, bundle = load_bundle(cfg, paths)
+    pred = read_pred(paths, MAIN)
+    if pred is None:
+        raise RuntimeError("no predictions yet: run the train step first")
+    return dashboard.build(cfg, paths, bundle, pred)
 
 
 def do_status(cfg: dict, paths: Paths) -> dict:

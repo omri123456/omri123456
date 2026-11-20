@@ -21,13 +21,14 @@ TEMPLATE = Path(__file__).with_name("template.html")
 
 STRATEGY_HE = {"cnn_all": "המודל (CNN, כל המידע)", "cnn_market": "CNN על מחירים בלבד",
                "cnn_rules": "CNN + אותות השיטות הקלאסיות",
+               "cnn_breadth": "CNN + רוחב שוק מהסורק",
                "linear_all": "מודל ליניארי (כל המידע)", "buy_and_hold": "קנה והחזק",
                "trend_200d": "כלל מגמה (ממוצע 200 יום)", "constant_mix": "חשיפה קבועה זהה"}
 PERIOD_HE = {"development": "פיתוח", "holdout": "מבחן נקי (holdout)", "full": "כל התקופה"}
 GROUP_HE = {"market": "מחיר ותנודתיות", "rates": "ריביות ואשראי", "cross": "מט\"ח ונפט",
             "liquidity": "נזילות ותנאים פיננסיים", "macro": "מאקרו", "forecasts": "תחזיות וציפיות",
             "news_idx": "מדדי חדשות", "wiki": "אירועי עולם (ויקיפדיה)", "calendar": "לוח שנה ו-FOMC",
-            "rules": "שיטות מסחר קלאסיות"}
+            "rules": "שיטות מסחר קלאסיות", "breadth": "רוחב שוק (סורק)"}
 EVENT_HE = {
     "news: war": "חדשות: מלחמה", "news: terror": "חדשות: טרור", "news: disaster": "חדשות: אסון טבע/תאונה",
     "news: health": "חדשות: בריאות ומגפות", "news: economy": "חדשות: כלכלה", "news: central_bank": "חדשות: בנקים מרכזיים",
@@ -71,7 +72,7 @@ def _table(headers: list[str], rows: list[list[str]], highlight: int | None = No
 
 def _strategy_rows(strategies: pd.DataFrame, period: str) -> list[list[str]]:
     part = strategies[strategies["period"] == period]
-    order = ["cnn_all", "buy_and_hold", "constant_mix", "cnn_rules", "cnn_market", "linear_all"]
+    order = ["cnn_all", "buy_and_hold", "constant_mix", "cnn_breadth", "cnn_rules", "cnn_market", "linear_all"]
     rows = []
     for name in order:
         match = part[(part["strategy"] == name) & (part["variant"] != "rules")]
@@ -119,7 +120,7 @@ def _verdict(strategies: pd.DataFrame) -> tuple[str, str]:
 
 def _quality_rows(quality: pd.DataFrame) -> list[list[str]]:
     rows = []
-    for variant in ("cnn_all", "cnn_rules", "cnn_market", "linear_all"):
+    for variant in ("cnn_all", "cnn_breadth", "cnn_rules", "cnn_market", "linear_all"):
         for period in ("development", "holdout"):
             part = quality[(quality["variant"] == variant) & (quality["period"] == period)]
             for _, r in part.sort_values("horizon").iterrows():

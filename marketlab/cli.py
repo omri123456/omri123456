@@ -9,6 +9,7 @@
   report     build reports/latest.html
   daily      fetch -> paper step -> breadth scan -> signal -> report  (every trading day)
   signal     print today's decision again from what is on disk
+  dashboard  write the decision dashboard's data files to reports/dashboard
   run-all    fetch -> research -> train -> backtest -> paper -> report
   status     what is on disk and how fresh it is
 """
@@ -30,7 +31,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", help="YAML file layered over config/default.yaml")
     parser.add_argument("--quiet", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("fetch", "build", "research", "backtest", "report", "run-all", "status", "signal"):
+    for name in ("fetch", "build", "research", "backtest", "report", "run-all", "status", "signal", "dashboard"):
         sub.add_parser(name)
     daily = sub.add_parser("daily")
     daily.add_argument("--no-scan", action="store_true", help="skip the market-breadth scan")
@@ -76,7 +77,14 @@ def main(argv: list[str] | None = None) -> int:
         pipeline.do_paper(cfg, paths, "step")
         result = pipeline.do_signal(cfg, paths, scan=not args.no_scan)
         report()
+        try:
+            pipeline.do_dashboard(cfg, paths)
+        except Exception as exc:  # the dashboard is a view: never block the daily signal on it
+            logging.getLogger(__name__).warning("dashboard data not built: %s", exc)
         print(describe(result))
+    elif args.command == "dashboard":
+        for name, path in pipeline.do_dashboard(cfg, paths).items():
+            print(name, path)
     elif args.command == "signal":
         from .trading.signal import describe
         print(describe(pipeline.do_signal(cfg, paths, scan=False)))
