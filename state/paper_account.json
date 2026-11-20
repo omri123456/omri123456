@@ -3,20 +3,32 @@
  "instrument": "NASDAQ100",
  "initial_cash": 100000.0,
  "broker": {
-  "cash": 100000.0,
+  "cash": 0.0,
   "cost_bps": 5.0,
   "borrow_spread": 1.0,
-  "units": 0.0,
-  "last_price": 27943.74,
-  "last_date": "2026-11-13",
-  "trades": [],
-  "costs_paid": 0.0,
-  "interest_earned": 0.0
+  "units": 3.6763232210826846,
+  "last_price": 26517.05,
+  "last_date": "2026-11-19",
+  "trades": [
+   {
+    "date": "2026-11-16",
+    "side": "BUY",
+    "price": 27197.15,
+    "value": 99985.51,
+    "units": 3.6763232210826846,
+    "cost": 49.99,
+    "weight_after": 1.0,
+    "equity_after": 99985.51,
+    "note": ""
+   }
+  ],
+  "costs_paid": 49.99275704613447,
+  "interest_earned": 35.50684931506849
  },
  "pending": {
-  "decided_on": "2026-11-13",
+  "decided_on": "2026-11-19",
   "target_weight": 1.0,
-  "p_up": 0.6281,
+  "p_up": 0.6404,
   "horizon": 5
  },
  "history": [
@@ -27,7 +39,43 @@
    "price": 27943.74,
    "cash": 100000.0,
    "traded": false
+  },
+  {
+   "date": "2026-11-16",
+   "equity": 99985.51409226895,
+   "weight": 1.0,
+   "price": 27197.15,
+   "cash": 0.0,
+   "traded": true,
+   "filled_decision": "2026-11-13"
+  },
+  {
+   "date": "2026-11-17",
+   "equity": 99267.270824566,
+   "weight": 1.0,
+   "price": 27001.78,
+   "cash": 0.0,
+   "traded": false,
+   "filled_decision": "2026-11-16"
+  },
+  {
+   "date": "2026-11-18",
+   "equity": 99688.13630691555,
+   "weight": 1.0,
+   "price": 27116.26,
+   "cash": 0.0,
+   "traded": false,
+   "filled_decision": "2026-11-17"
+  },
+  {
+   "date": "2026-11-19",
+   "equity": 97485.2466696106,
+   "weight": 1.0,
+   "price": 26517.05,
+   "cash": 0.0,
+   "traded": false,
+   "filled_decision": "2026-11-18"
   }
  ],
- "processed_days": 0
+ "processed_days": 4
 }
