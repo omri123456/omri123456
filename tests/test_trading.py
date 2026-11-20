@@ -124,3 +124,13 @@ def test_macd_lines_are_scale_free_and_causal():
     assert lines["macd"].iloc[-1] > 0                      # steady uptrend: fast average above slow
     np.testing.assert_allclose(macd_lines(price * 1000.0).to_numpy(), lines.to_numpy(), atol=1e-12, equal_nan=True)
     np.testing.assert_allclose(macd_lines(price.iloc[:200]).to_numpy(), lines.iloc[:200].to_numpy(), atol=1e-12, equal_nan=True)
+
+
+def test_daily_decision_words():
+    from marketlab.trading.signal import decide
+    assert decide(current=0.0, target=1.0, band=0.1) == "buy"
+    assert decide(current=0.5, target=0.9, band=0.1) == "add"
+    assert decide(current=1.0, target=0.6, band=0.1) == "reduce"
+    assert decide(current=1.0, target=0.0, band=0.1) == "exit"
+    assert decide(current=1.0, target=0.95, band=0.1) == "hold"
+    assert decide(current=0.0, target=0.05, band=0.1) == "hold"

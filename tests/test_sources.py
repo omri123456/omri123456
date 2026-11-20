@@ -79,3 +79,18 @@ def test_fred_csv_parser_handles_missing_values():
     series = fred.parse_series(body, "VIXCLS")
     assert series.index.tolist() == [pd.Timestamp("2020-01-02"), pd.Timestamp("2020-01-07")]
     assert series.tolist() == [12.5, 13.9]
+
+
+def test_events_are_stored_per_year_and_months_are_replaced(tmp_path):
+    import gzip
+    from marketlab.config import Paths
+    from marketlab.data import store
+    paths = Paths(tmp_path).ensure()
+    page = WIKI_SAMPLE.replace("2008-09-15", "2020-03-16")
+    with gzip.open(wiki.cache_path(paths.wiki, 2020, 3), "wt", encoding="utf-8") as fh:
+        fh.write(page)
+    assert store._update_events(paths, [(2020, 3)]) == 3
+    first = (store.events_dir(paths) / "wiki_2020.csv.gz").read_bytes()
+    assert store._update_events(paths, [(2020, 3)]) == 3          # re-parsing a month replaces it
+    assert (store.events_dir(paths) / "wiki_2020.csv.gz").read_bytes() == first  # byte-identical
+    assert store._months_with_events(paths) == {(2020, 3)}

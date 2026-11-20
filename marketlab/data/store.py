@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+from datetime import date
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -46,28 +47,53 @@ class RawData:
         )
 
 
-def events_path(paths: Paths) -> Path:
-    return paths.processed / "wiki_events.csv.gz"
+def events_dir(paths: Paths) -> Path:
+    """One gzip CSV of parsed events per year. Kept in git: past years never change, so a fresh
+    container only has to download the current months instead of 280 Wikipedia pages."""
+    return paths.root / "data" / "events"
+
+
+def _year_file(paths: Paths, year: int) -> Path:
+    return events_dir(paths) / f"wiki_{year}.csv.gz"
+
+
+def _read_year(paths: Paths, year: int) -> pd.DataFrame:
+    path = _year_file(paths, year)
+    if not path.exists():
+        return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"), "category": pd.Series(dtype=object),
+                             "text": pd.Series(dtype=object)})
+    return pd.read_csv(path, parse_dates=["date"], keep_default_na=False)
+
+
+def _months_with_events(paths: Paths) -> set[tuple[int, int]]:
+    months: set[tuple[int, int]] = set()
+    for path in events_dir(paths).glob("wiki_*.csv.gz"):
+        dates = pd.read_csv(path, usecols=["date"], parse_dates=["date"])["date"]
+        months.update(zip(dates.dt.year, dates.dt.month))
+    return months
 
 
 def _update_events(paths: Paths, changed: list[tuple[int, int]]) -> int:
-    """Re-parse only the months that changed and merge them into the events file."""
-    target = events_path(paths)
-    if not target.exists():
-        df = wiki.parse_all(paths.wiki)
-    else:
-        df = pd.read_csv(target, parse_dates=["date"], keep_default_na=False)
-        for year, month in changed:
-            in_month = (df["date"].dt.year == year) & (df["date"].dt.month == month)
-            df = df[~in_month]
-            path = wiki.cache_path(paths.wiki, year, month)
-            with gzip.open(path, "rt", encoding="utf-8", errors="replace") as fh:
-                fresh = pd.DataFrame(wiki.parse_month(fh.read()), columns=["date", "category", "text"])
-            df = pd.concat([df, fresh], ignore_index=True)
+    """Re-parse the months that changed and rewrite the year files they belong to."""
+    by_year: dict[int, list[int]] = {}
+    for year, month in changed:
+        by_year.setdefault(year, []).append(month)
+    for year, months in sorted(by_year.items()):
+        df = _read_year(paths, year)
+        df = df[~(df["date"].dt.year.eq(year) & df["date"].dt.month.isin(months))]
+        fresh = []
+        for month in months:
+            with gzip.open(wiki.cache_path(paths.wiki, year, month), "rt", encoding="utf-8", errors="replace") as fh:
+                fresh.append(pd.DataFrame(wiki.parse_month(fh.read()), columns=["date", "category", "text"]))
+        df = pd.concat([df, *fresh], ignore_index=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df[df["date"].dt.year == year]  # a page can list a day of a neighbouring month
         df = df.drop_duplicates(subset=["date", "text"]).sort_values("date", kind="stable")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(target, index=False, compression="gzip")
-    return len(df)
+        events_dir(paths).mkdir(parents=True, exist_ok=True)
+        # mtime=0 keeps the gzip bytes identical when the content is, so git sees no change
+        with gzip.GzipFile(_year_file(paths, year), "wb", mtime=0) as fh:
+            fh.write(df.to_csv(index=False).encode("utf-8"))
+    return sum(len(_read_year(paths, y)) for y in by_year)
 
 
 def fetch_everything(cfg: dict, paths: Paths, *, max_age_hours: float | None = 12.0) -> dict:
@@ -93,7 +119,13 @@ def fetch_everything(cfg: dict, paths: Paths, *, max_age_hours: float | None = 1
 
     changed: list[tuple[int, int]] = []
     wiki_counts = {"downloaded": 0, "cached": 0, "failed": 0}
+    known = _months_with_events(paths)
+    today = date.today()
     for year, month in wiki.month_iter(cfg["project"]["wiki_start"]):
+        settled = (today.year - year) * 12 + (today.month - month) >= 2
+        if settled and (year, month) in known and not wiki.cache_path(paths.wiki, year, month).exists():
+            wiki_counts["cached"] += 1  # parsed events are already stored for this finished month
+            continue
         try:
             if wiki.fetch_month(src["wiki"]["url"], paths.wiki, year, month):
                 changed.append((year, month))
@@ -104,8 +136,8 @@ def fetch_everything(cfg: dict, paths: Paths, *, max_age_hours: float | None = 1
             wiki_counts["failed"] += 1
             log.warning("wiki %04d-%02d failed: %s", year, month, exc)
     summary["wiki"] = wiki_counts
-    if changed or not events_path(paths).exists():
-        summary["wiki_events"] = _update_events(paths, changed)
+    if changed:
+        summary["wiki_events_updated"] = _update_events(paths, changed)
     return summary
 
 
@@ -121,8 +153,10 @@ def load_raw(cfg: dict, paths: Paths) -> RawData:
     raw.gpr = _safe(indices.load_gpr, paths.misc / "gpr_daily.xls")
     raw.spf = _safe(spf.load_spf, paths.misc / "spf_meanlevel.xlsx")
     raw.fomc = _safe(fomc.load_fomc, paths.fomc)
-    if events_path(paths).exists():
-        raw.events = pd.read_csv(events_path(paths), parse_dates=["date"], keep_default_na=False)
+    files = sorted(events_dir(paths).glob("wiki_*.csv.gz"))
+    if files:
+        raw.events = pd.concat([pd.read_csv(f, parse_dates=["date"], keep_default_na=False) for f in files],
+                               ignore_index=True).sort_values("date", kind="stable").reset_index(drop=True)
     return raw
 
 

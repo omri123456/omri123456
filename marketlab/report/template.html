@@ -8,6 +8,7 @@
   --line: #e3e6eb; --axis: #c2c8d1; --wash: rgba(16, 21, 28, 0.045);
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --neg: #e34948;
   --good: #006300; --bad: #b3261e; --good-bg: #e8f5e8; --bad-bg: #fdecea; --neutral-bg: #eef1f5;
+  --btn-bg: #1f63b8; --btn-ink: #ffffff;
   --font: "Heebo", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -15,7 +16,7 @@
     --bg: #0e1116; --surface: #171b22; --ink: #eef0f3; --ink-2: #c0c6cf; --muted: #8a93a0;
     --line: #2a303a; --axis: #3a424e; --wash: rgba(238, 240, 243, 0.06);
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --neg: #e66767;
-    --good: #4cc04c; --bad: #f08a80; --good-bg: #14301a; --bad-bg: #3a1c1a; --neutral-bg: #1f2530;
+    --btn-bg: #3987e5; --btn-ink: #0e1116; --good: #4cc04c; --bad: #f08a80; --good-bg: #14301a; --bad-bg: #3a1c1a; --neutral-bg: #1f2530;
     color-scheme: dark;
   }
 }
@@ -23,7 +24,7 @@
   --bg: #0e1116; --surface: #171b22; --ink: #eef0f3; --ink-2: #c0c6cf; --muted: #8a93a0;
   --line: #2a303a; --axis: #3a424e; --wash: rgba(238, 240, 243, 0.06);
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --neg: #e66767;
-  --good: #4cc04c; --bad: #f08a80; --good-bg: #14301a; --bad-bg: #3a1c1a; --neutral-bg: #1f2530;
+  --btn-bg: #3987e5; --btn-ink: #0e1116; --good: #4cc04c; --bad: #f08a80; --good-bg: #14301a; --bad-bg: #3a1c1a; --neutral-bg: #1f2530;
   color-scheme: dark;
 }
 body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; }
@@ -84,6 +85,31 @@ summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
 .hbars .bar.pos { left: 50%; background: var(--s1); border-radius: 0 4px 4px 0; }
 .hbars .bar.neg { right: 50%; background: var(--neg); border-radius: 4px 0 0 4px; }
 .hbars .val { direction: ltr; font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: left; }
+.decision { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 8px; background: var(--neutral-bg); }
+.decision.up { background: var(--good-bg); } .decision.down { background: var(--bad-bg); }
+.decision-label { font-size: 13px; color: var(--ink-2); }
+.decision strong { font-size: 26px; line-height: 1.3; }
+.decision-date { font-size: 13px; color: var(--muted); }
+.chat { gap: 12px; }
+.chat-log { display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; }
+.chat-log:empty { display: none; }
+.msg { padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; max-width: 68ch; line-height: 1.6; overflow-wrap: anywhere; }
+.msg.user { background: var(--wash); align-self: flex-start; font-weight: 500; }
+.msg.bot { border: 1px solid var(--line); align-self: flex-end; }
+.msg.bot.pending { color: var(--muted); }
+.msg.err { color: var(--bad); border-color: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px;
+  padding: 5px 11px; font: inherit; font-size: 13px; cursor: pointer; }
+.chips button:hover { background: var(--wash); }
+.ask-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.ask-row textarea { flex: 1 1 260px; min-width: 0; font: inherit; font-size: 15px; padding: 9px 11px; border-radius: 8px;
+  border: 1px solid var(--axis); background: var(--surface); color: var(--ink); resize: vertical; }
+.btn { font: inherit; font-weight: 500; border: 0; border-radius: 8px; padding: 9px 16px; cursor: pointer;
+  background: var(--btn-bg); color: var(--btn-ink); }
+.btn.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line); }
+.btn:disabled { opacity: 0.55; cursor: default; }
+button:focus-visible, textarea:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
 ul { margin: 0; padding-inline-start: 20px; max-width: 68ch; } li { margin-block: 4px; }
 </style>
 
@@ -95,6 +121,36 @@ ul { margin: 0; padding-inline-start: 20px; max-width: 68ch; } li { margin-block
     <div class="tiles">{{TILES}}</div>
     <p class="facts">{{HOLDOUT_NOTE}} {{FACTS}}</p>
   </header>
+
+  <section id="today">
+    <h2>האות של היום</h2>
+    {{SIGNAL}}
+    <p class="muted">המודל מדבר רק על המדד כולו (למשל דרך קרן שעוקבת אחריו), לא על מניות בודדות. זה פלט של ניסוי ולא ייעוץ השקעות: במבחן הנקי המודל לא הרוויח יותר מקנה-והחזק.</p>
+  </section>
+
+  <section id="ask">
+    <h2>שאל את האנליסט</h2>
+    <p>האנליסט קורא את כל הנתונים שבדף הזה, כולל ההחלטה של כל יום מ-2012, החשבון הוירטואלי וסריקת השוק, ועונה בעברית. הוא לא רואה מחירים או חדשות מעבר למה שבדף. כל שאלה משתמשת במכסת Claude שלך, ובפעם הראשונה תתבקש לאשר.</p>
+    <div class="card chat">
+      <div class="chat-log" id="chat-log" aria-live="polite"></div>
+      <div class="chips" id="chips">
+        <button type="button">מה המודל אומר היום ולמה?</button>
+        <button type="button">האם המודל טוב יותר מלהחזיק את המדד?</button>
+        <button type="button">מה המודל עשה ב-2022 ומה זה עשה לחשבון?</button>
+        <button type="button">איזה סוג מידע הכי עוזר לחיזוי?</button>
+        <button type="button">מה קורה למדד אחרי ירידה של 3% ביום?</button>
+        <button type="button">אילו מניות גדולות במכירת יתר היום?</button>
+      </div>
+      <form class="ask-row" id="ask-form">
+        <label for="ask-input" class="muted" hidden>השאלה שלך</label>
+        <textarea id="ask-input" rows="2" placeholder="למשל: למה המודל לא יצא מהשוק השבוע?"></textarea>
+        <button type="submit" class="btn" id="ask-send">שאל</button>
+        <button type="button" class="btn ghost" id="ask-stop" hidden>עצור</button>
+        <button type="button" class="btn ghost" id="ask-clear" hidden>שיחה חדשה</button>
+      </form>
+      <p class="muted" id="ask-status"></p>
+    </div>
+  </section>
 
   <section>
     <h2>100 דולר וירטואליים לאורך זמן</h2>
@@ -422,5 +478,140 @@ ul { margin: 0; padding-inline-start: 20px; max-width: 68ch; } li { margin-block
   }
   hbars('ablation-holdout', DATA.ablation_holdout);
   hbars('ablation-development', DATA.ablation_development);
+})();
+</script>
+
+<script type="application/json" id="agent-data">{{AGENT_DATA}}</script>
+<script>
+(function () {
+  var AG = {};
+  try { AG = JSON.parse(document.getElementById('agent-data').textContent || '{}'); } catch (e) { AG = {}; }
+  var log = document.getElementById('chat-log'), form = document.getElementById('ask-form');
+  var input = document.getElementById('ask-input'), send = document.getElementById('ask-send');
+  var stop = document.getElementById('ask-stop'), clear = document.getElementById('ask-clear');
+  var status = document.getElementById('ask-status'), chips = document.getElementById('chips');
+  var sample = null, toolsOk = false, turns = [], ctl = null, busy = false;
+
+  function setIdle(on) {
+    busy = !on; send.disabled = !on; input.disabled = !on; stop.hidden = on;
+    clear.hidden = !on || !turns.length;
+    chips.querySelectorAll('button').forEach(function (b) { b.disabled = !on; });
+  }
+  function bubble(cls, text) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + cls; d.textContent = text; log.appendChild(d);
+    log.scrollTop = log.scrollHeight; return d;
+  }
+  function unavailable(msg) {
+    form.hidden = true; chips.hidden = true; status.textContent = msg;
+  }
+
+  var compact = {};
+  Object.keys(AG).forEach(function (k) { if (k !== 'daily' && k !== 'scanner_hits') compact[k] = AG[k]; });
+
+  function dailySlice(start, end, maxRows) {
+    var d = AG.daily; if (!d) return { error: 'no daily series' };
+    var rows = d.rows.filter(function (r) { return (!start || r[0] >= start) && (!end || r[0] <= end); });
+    var sampled = false;
+    if (rows.length > maxRows) {
+      var step = Math.ceil(rows.length / maxRows), keep = [];
+      for (var i = 0; i < rows.length; i += step) keep.push(rows[i]);
+      if (keep[keep.length - 1] !== rows[rows.length - 1]) keep.push(rows[rows.length - 1]);
+      rows = keep; sampled = true;
+    }
+    return { columns: d.columns, rows: rows, sampled_every_n_days: sampled ? Math.ceil((d.rows.length) / maxRows) : 1 };
+  }
+
+  var RULES = [
+    'You are the analyst inside MarketLab, a research system built for one person. Answer in Hebrew unless asked otherwise, in plain words a non-expert follows.',
+    'What the system is: a multi-branch temporal CNN that reads the last 60 trading days of ~115 point-in-time features (prices and volatility, rates and credit, FX and oil, liquidity, macro data, economists\' forecasts, newspaper-based indices, ~118,000 Wikipedia world events, calendar and Fed meetings) and gives the probability that the ' + (AG.target || 'NASDAQ100') + ' index rises over the next 1, 5 and 20 trading days.',
+    'Strategy: by default 100% invested. Exposure is cut when the model is more pessimistic than its own predictions over the previous year (score = (p - usual) / spread; half out at -1, fully out at -2). Decisions after the close execute at the next close; ' + (AG.cost_bps || 5) + ' bp cost per trade; idle cash earns the 3-month T-bill rate. No leverage, no shorting.',
+    'Testing: each year was predicted by a model trained only on earlier years. Years up to ' + (AG.dev_end_year || 2018) + ' were used to design the system ("development"); later years are the clean "holdout" test. Trust holdout numbers more.',
+    'Honesty rules: use only the data below and your tools; never invent numbers; say which period a number covers. If the data cannot answer, say so. The model has NOT been shown to beat buy-and-hold on return; say that when someone asks what to do. You may report what the model says today (decision, target exposure) but it is an experiment, not investment advice. You see no live prices or news beyond this data. Scanner hits are stocks that matched a chart rule, not recommendations. The paper account trades virtual money only.',
+    'Field notes: strategies.* are fractions (0.196 = 19.6%); timing_pvalue below 0.05 means timing unlikely to be luck; quality.ic is rank correlation of prediction with the realised return; feature_groups.logloss_gain > 0 means the group helped out of sample; events.car5/car20 are average returns 5/20 days after an event net of drift, t20 its t-stat; daily rows: p = model probability of a rise over ' + (AG.trade_horizon || 5) + ' days, usual and spread = the model\'s own yardstick, exposure = share invested, model_equity and index_equity = value of 100,000$ (strategy vs buy-and-hold).',
+    'Format: short. A few sentences or up to 6 lines starting with "- ". No Markdown tables, no headings, no bold markers.',
+    'DATA (JSON):\n' + JSON.stringify(compact)
+  ].join('\n\n');
+
+  var TOOLS = [
+    { name: 'get_daily_model',
+      description: 'Daily model output and account values between two dates (YYYY-MM-DD). Returns columns date, p, usual, spread, exposure, model_equity, index_equity. Long ranges are thinned to about 150 rows; ask for a shorter range for detail.',
+      inputSchema: { type: 'object', properties: { start: { type: 'string' }, end: { type: 'string' } } },
+      execute: function (inp) { return dailySlice(String(inp.start || ''), String(inp.end || ''), 150); } },
+    { name: 'get_scanner_hits',
+      description: 'Stocks that matched a chart rule in the latest pre-market scan of liquid US stocks. Optional setup filter: oversold, oversold_bounce, breakout_20d, bull_flag, reclaim_ma20. Ordered most traded first.',
+      inputSchema: { type: 'object', properties: { setup: { type: 'string' } } },
+      execute: function (inp) {
+        var s = AG.scanner_hits; if (!s) throw new Error('no scan available');
+        var f = String(inp.setup || '');
+        var hits = s.hits.filter(function (h) { return !f || (h.setups || []).indexOf(f) >= 0; }).slice(0, 60);
+        return { as_of: s.as_of, scanned: s.scanned, hits: hits };
+      } }
+  ];
+
+  function message(code) {
+    return ({
+      not_granted: 'האנליסט לא אושר בדף הזה. אפשר לאשר אותו מתפריט ההרשאות של הדף.',
+      sampling_disabled: 'Claude לא זמין לחשבון הזה.',
+      rate_limited: 'יותר מדי שאלות ברצף, או שהמכסה שלך הסתיימה. נסה שוב בעוד כמה דקות.',
+      session_expired: 'צריך להתחבר מחדש ל-claude.ai.',
+      prompt_too_large: 'השיחה ארוכה מדי. התחל שיחה חדשה.',
+      refused: 'Claude סירב לענות על השאלה הזו. נסה לנסח אחרת.',
+      empty_completion: 'לא התקבלה תשובה. נסה לשאול בצורה פשוטה יותר.'
+    })[code] || 'משהו השתבש בדרך. נסה שוב.';
+  }
+
+  async function ask(question) {
+    question = (question || '').trim();
+    if (!question || busy || !sample) return;
+    input.value = '';
+    bubble('user', question);
+    turns.push({ role: 'user', content: question });
+    if (turns.length > 12) turns = turns.slice(turns.length - 12);
+    while (turns.length && turns[0].role !== 'user') turns.shift();
+    var out = bubble('bot pending', 'חושב...');
+    ctl = new AbortController(); setIdle(false);
+    var opts = { signal: ctl.signal, cache: false, onText: function (u) { out.className = 'msg bot'; out.textContent = u.text; log.scrollTop = log.scrollHeight; } };
+    if (toolsOk) {
+      delete opts.cache;
+      opts.tools = TOOLS.map(function (t) {
+        return { name: t.name, description: t.description, inputSchema: t.inputSchema,
+                 execute: function (inp) { status.textContent = 'מעיין בנתונים...'; return t.execute(inp || {}); } };
+      });
+    }
+    try {
+      var res = await sample([{ role: 'user', content: RULES }].concat(turns), opts);
+      out.className = 'msg bot'; out.textContent = res.text;
+      turns.push({ role: 'assistant', content: res.text });
+      status.textContent = res.truncated ? 'התשובה נקטעה. אפשר לבקש את ההמשך.' : '';
+    } catch (e) {
+      var code = e && e.code;
+      if (code === 'cancelled') { out.className = 'msg bot'; out.textContent = (e.text || '') + (e.text ? '\n(נעצר)' : 'נעצר.'); }
+      else if (code === 'refused') { out.remove(); bubble('bot err', message(code)); }
+      else { out.className = 'msg bot err'; out.textContent = (e && e.text ? e.text + '\n\n' : '') + message(code); }
+      turns.pop();
+      if (code === 'not_granted' || code === 'sampling_disabled' || code === 'not_declared' || code === 'capability_disabled') unavailable(message(code));
+      else status.textContent = '';
+    } finally {
+      ctl = null; setIdle(true);
+    }
+  }
+
+  form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input.value); } });
+  stop.addEventListener('click', function () { if (ctl) ctl.abort(); });
+  clear.addEventListener('click', function () { turns = []; log.textContent = ''; status.textContent = ''; setIdle(true); input.focus(); });
+  chips.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) ask(b.textContent); });
+
+  setIdle(false); stop.hidden = true;
+  status.textContent = 'מתחבר ל-Claude...';
+  var use = window.claude && window.claude.use ? window.claude.use('sample') : Promise.resolve(null);
+  Promise.resolve(use).then(async function (fn) {
+    if (!fn) { unavailable('האנליסט עובד כשהדף נפתח בתוך claude.ai.'); return; }
+    sample = fn;
+    try { var lim = await sample.limits(); toolsOk = !!(lim && lim.tools); } catch (e) { toolsOk = false; }
+    if (!toolsOk && AG.daily) compact.daily_weekly = dailySlice('', '', 800);
+    status.textContent = ''; setIdle(true);
+  }, function () { unavailable('האנליסט עובד כשהדף נפתח בתוך claude.ai.'); });
 })();
 </script>

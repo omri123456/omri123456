@@ -1,0 +1,138 @@
+{
+ "date": "2026-11-19",
+ "instrument": "NASDAQ100",
+ "decision": "hold",
+ "decision_he": "החזק / חכה: בלי שינוי",
+ "weight_now": 1.0,
+ "weight_target": 1.0,
+ "p_up": 0.6404,
+ "p_usual": 0.6114,
+ "score": 0.39,
+ "horizon_days": 5,
+ "executes_at": "סגירת יום המסחר הבא",
+ "account": {
+  "equity": 97485.25,
+  "return_pct": -2.515,
+  "index_return_pct": -5.106,
+  "trades": 1,
+  "last_mark": "2026-11-19"
+ },
+ "breadth": {
+  "as_of": "2026-11-19",
+  "scanned": 1501,
+  "universe": 5924,
+  "counts": {
+   "oversold": 160,
+   "oversold_bounce": 30,
+   "breakout_20d": 20,
+   "bull_flag": 52,
+   "reclaim_ma20": 16
+  },
+  "pct": {
+   "oversold": 10.7,
+   "oversold_bounce": 2.0,
+   "breakout_20d": 1.3,
+   "bull_flag": 3.5,
+   "reclaim_ma20": 1.1
+  },
+  "top": [
+   {
+    "symbol": "NVDA",
+    "setups": [
+     "oversold"
+    ],
+    "price": 145.98,
+    "rsi": 19.8
+   },
+   {
+    "symbol": "GOOG",
+    "setups": [
+     "oversold"
+    ],
+    "price": 271.02,
+    "rsi": 29.6
+   },
+   {
+    "symbol": "INTC",
+    "setups": [
+     "oversold_bounce"
+    ],
+    "price": 55.72,
+    "rsi": 31.1
+   },
+   {
+    "symbol": "PANW",
+    "setups": [
+     "reclaim_ma20"
+    ],
+    "price": 361.73,
+    "rsi": 54.5
+   },
+   {
+    "symbol": "UNH",
+    "setups": [
+     "oversold"
+    ],
+    "price": 330.48,
+    "rsi": 24.3
+   },
+   {
+    "symbol": "CRWD",
+    "setups": [
+     "reclaim_ma20"
+    ],
+    "price": 243.46,
+    "rsi": 53.6
+   },
+   {
+    "symbol": "COHR",
+    "setups": [
+     "reclaim_ma20"
+    ],
+    "price": 214.94,
+    "rsi": 45.8
+   },
+   {
+    "symbol": "CAT",
+    "setups": [
+     "oversold"
+    ],
+    "price": 537.37,
+    "rsi": 27.0
+   },
+   {
+    "symbol": "INSM",
+    "setups": [
+     "breakout_20d"
+    ],
+    "price": 144.46,
+    "rsi": 77.4
+   },
+   {
+    "symbol": "MSTR",
+    "setups": [
+     "oversold"
+    ],
+    "price": 86.13,
+    "rsi": 22.9
+   },
+   {
+    "symbol": "PDD",
+    "setups": [
+     "breakout_20d",
+     "reclaim_ma20"
+    ],
+    "price": 86.0,
+    "rsi": 63.8
+   },
+   {
+    "symbol": "NOW",
+    "setups": [
+     "oversold"
+    ],
+    "price": 88.87,
+    "rsi": 24.8
+   }
+  ]
+ }
+}

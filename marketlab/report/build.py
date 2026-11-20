@@ -138,6 +138,110 @@ def _series(frame: pd.DataFrame, columns: dict[str, str]) -> dict:
                        for key, name in columns.items() if key in frame.columns]}
 
 
+
+DECISION_TONE = {"buy": "up", "add": "up", "reduce": "down", "exit": "down", "hold": "flat"}
+
+
+def _signal_html(signal: dict | None) -> str:
+    if not signal:
+        return '<p class="muted">עדיין אין אות יומי: <code>python -m marketlab daily</code>.</p>'
+    tone = DECISION_TONE.get(signal["decision"], "flat")
+    bits = [f'<div class="decision {tone}"><span class="decision-label">ההחלטה של המודל</span>'
+            f'<strong>{html.escape(signal["decision_he"])}</strong>'
+            f'<span class="decision-date">לפי סגירת {html.escape(signal["date"])}, לביצוע בסגירת יום המסחר הבא</span></div>']
+    facts = [("חשיפה למדד עכשיו", f'{signal["weight_now"]:.0%}', f'יעד אחרי הסגירה הבאה: {signal["weight_target"]:.0%}')]
+    if signal.get("p_usual") is not None:
+        facts.append((f'סיכוי לעלייה ב-{signal["horizon_days"]} ימים', f'{signal["p_up"]:.1%}',
+                      f'הרגיל של המודל: {signal["p_usual"]:.1%} (ציון {signal["score"]:+.2f})'))
+    b = signal.get("breadth")
+    if b:
+        facts.append(("מניות במכירת יתר", f'{b["pct"]["oversold"]}%',
+                      f'{b["counts"]["oversold"]:,} מתוך {b["scanned"]:,} מניות נזילות'))
+    acc = signal["account"]
+    facts.append(("החשבון הוירטואלי", f'${acc["equity"]:,.0f}', f'{acc["return_pct"]:+.2f}% מאז הפתיחה'))
+    tiles = "".join(f'<div class="tile"><div class="tile-label">{html.escape(a)}</div>'
+                    f'<div class="tile-value">{html.escape(v)}</div><div class="tile-note">{html.escape(n)}</div></div>'
+                    for a, v, n in facts)
+    return bits[0] + f'<div class="tiles">{tiles}</div>'
+
+
+def _records(frame: pd.DataFrame | None, digits: int = 4) -> list[dict]:
+    if frame is None or not len(frame):
+        return []
+    clean = frame.replace([np.inf, -np.inf], np.nan).round(digits)
+    return json.loads(clean.to_json(orient="records", date_format="iso"))
+
+
+def _agent_payload(cfg: dict, paths: Paths) -> dict:
+    """Everything the in-page analyst may look up, as compact plain data."""
+    run, research = paths.runs / "latest", paths.runs / "research"
+    out: dict = {"target": cfg["project"]["target"], "dev_end_year": int(cfg["walkforward"]["dev_end_year"]),
+                 "trade_horizon": int(cfg["model"]["trade_horizon"]), "cost_bps": float(cfg["trading"]["cost_bps"])}
+    signal_path = paths.state / "latest_signal.json"
+    out["signal"] = json.loads(signal_path.read_text(encoding="utf-8")) if signal_path.exists() else None
+    strategies = _read(run / "strategies.csv")
+    if strategies is not None:
+        keep = ["period", "variant", "strategy", "cagr", "vol", "sharpe", "max_drawdown", "avg_exposure",
+                "trades_per_year", "timing_gain", "timing_pvalue"]
+        out["strategies"] = _records(strategies[[c for c in keep if c in strategies.columns]], 3)
+    quality = _read(run / "prediction_quality.csv")
+    if quality is not None:
+        keep = ["variant", "period", "horizon", "n", "up_rate", "accuracy", "auc", "ic", "ic_lo", "ic_hi", "score_ic", "skill"]
+        out["quality"] = _records(quality[[c for c in keep if c in quality.columns]], 3)
+    yearly = _read(run / "yearly_full.csv", index_col=0)
+    if yearly is not None:
+        out["yearly"] = _records(yearly.reset_index().rename(columns={yearly.index.name or "index": "year"}), 3)
+    for period in ("development", "holdout"):
+        ablation = _read(run / f"ablation_{period}.csv", index_col=0)
+        if ablation is not None:
+            out[f"feature_groups_{period}"] = _records(ablation.reset_index(), 5)
+    events = _read(research / "event_study.csv", index_col=0)
+    if events is not None:
+        keep = ["n", "first", "last", "day0", "car5", "car20", "t20", "hit5", "hit20", "vol_ratio"]
+        out["events"] = _records(events[keep].reset_index(), 4)
+    ic = _read(research / "feature_ic.csv")
+    if ic is not None:
+        part = ic[ic["horizon"] == int(cfg["model"]["trade_horizon"])].head(25)
+        out["top_features"] = _records(part[["feature", "group", "ic_early", "ic_late", "same_sign"]], 3)
+    pred_path = run / "pred_cnn_all.csv"
+    if pred_path.exists():
+        h = int(cfg["model"]["trade_horizon"])
+        pred = pd.read_csv(pred_path, index_col=0, parse_dates=True)
+        live = run / "pred_cnn_all_live.csv"
+        if live.exists():
+            extra = pd.read_csv(live, index_col=0, parse_dates=True)
+            pred = pd.concat([pred, extra[extra.index > pred.index[-1]]])
+        daily = pd.DataFrame({"p": pred[f"p_{h}"], "usual": pred.get(f"ref_mean_{h}"),
+                              "spread": pred.get(f"ref_std_{h}")})
+        equity = _read(run / "equity_full.csv", index_col=0, parse_dates=True)
+        if equity is not None:
+            daily["exposure"] = equity.get("cnn_all_weight")
+            daily["model_equity"] = equity.get("cnn_all")
+            daily["index_equity"] = equity.get("buy_and_hold")
+        daily.index = [d.strftime("%Y-%m-%d") for d in daily.index]
+        out["daily"] = {"columns": ["date", *daily.columns],
+                        "rows": [[d, *[None if pd.isna(v) else round(float(v), 4) for v in row]]
+                                 for d, row in zip(daily.index, daily.to_numpy())]}
+    state = paper.load_state(paths.state)
+    if state is not None:
+        out["paper_account"] = {"summary": paper.summary(state), "history": state["history"][-60:],
+                                "trades": state["broker"]["trades"][-20:]}
+    for name in ("signals.csv", "breadth.csv"):
+        frame = _read(paths.state / name)
+        if frame is not None:
+            out[name.replace(".csv", "_history")] = _records(frame.tail(120), 4)
+    watch = paths.root / "trader" / "watchlist.json"
+    if watch.exists():
+        try:
+            w = json.loads(watch.read_text(encoding="utf-8"))
+            out["scanner_hits"] = {"as_of": w.get("as_of"), "scanned": w.get("scanned"),
+                                   "hits": [{k: h.get(k) for k in ("symbol", "setups", "price", "rsi")}
+                                            for h in w.get("hits", [])[:150]]}
+        except ValueError:
+            pass
+    return out
+
+
 def build_report(cfg: dict, paths: Paths) -> Path:
     run = paths.runs / "latest"
     research = paths.runs / "research"
@@ -280,7 +384,7 @@ def build_report(cfg: dict, paths: Paths) -> Path:
     # ------------------------------------------------------------------ facts line
     facts = []
     if info.get("data_last_day"):
-        facts.append(f"נתונים עד {info['data_last_day']}")
+        facts.append(f"הבדיקה ההיסטורית עד {info['data_last_day']}")
     if info.get("panel_days"):
         facts.append(f"{info['panel_days']:,} ימי מסחר × {info['panel_features']} ערוצים")
     if info.get("events"):
@@ -296,14 +400,18 @@ def build_report(cfg: dict, paths: Paths) -> Path:
     parts["HORIZON"] = str(cfg["model"]["trade_horizon"])
     parts["COST"] = _num(float(cfg["trading"]["cost_bps"]), 0)
 
+    signal_path = paths.state / "latest_signal.json"
+    parts["SIGNAL"] = _signal_html(json.loads(signal_path.read_text(encoding="utf-8")) if signal_path.exists() else None)
+
     page = TEMPLATE.read_text(encoding="utf-8")
     for key in ("VERDICT", "TILES", "EQUITY_TABLE", "STRATEGIES_HOLDOUT", "STRATEGIES_DEVELOPMENT", "YEARLY_TABLE",
                 "QUALITY", "EVENTS", "EVENTS_BASELINE", "FEATURES", "FEATURES_NOTE", "PAPER", "FACTS", "TARGET",
-                "HOLDOUT_NOTE", "RULES_HOLDOUT", "RULES_DEVELOPMENT",
+                "HOLDOUT_NOTE", "RULES_HOLDOUT", "RULES_DEVELOPMENT", "SIGNAL",
                 "DEV_END", "HOLD_START", "HORIZON", "COST"):
         empty = "" if key in ("FACTS", "TILES", "EVENTS_BASELINE", "FEATURES_NOTE") else '<p class="muted">אין נתונים עדיין.</p>'
         page = page.replace("{{" + key + "}}", parts.get(key) or empty)
     page = page.replace("{{DATA}}", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
+    page = page.replace("{{AGENT_DATA}}", json.dumps(_agent_payload(cfg, paths), ensure_ascii=False).replace("</", "<\\/"))
     paths.reports.mkdir(parents=True, exist_ok=True)
     out = paths.reports / "latest.html"
     out.write_text(page, encoding="utf-8")

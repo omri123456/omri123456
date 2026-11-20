@@ -7,7 +7,8 @@
   backtest   out-of-sample scoring and virtual-money simulation -> runs/latest
   paper      forward paper account: init | step | status
   report     build reports/latest.html
-  daily      fetch -> paper step -> report   (the routine to run every trading day)
+  daily      fetch -> paper step -> breadth scan -> signal -> report  (every trading day)
+  signal     print today's decision again from what is on disk
   run-all    fetch -> research -> train -> backtest -> paper -> report
   status     what is on disk and how fresh it is
 """
@@ -29,8 +30,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", help="YAML file layered over config/default.yaml")
     parser.add_argument("--quiet", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("fetch", "build", "research", "backtest", "report", "daily", "run-all", "status"):
+    for name in ("fetch", "build", "research", "backtest", "report", "run-all", "status", "signal"):
         sub.add_parser(name)
+    daily = sub.add_parser("daily")
+    daily.add_argument("--no-scan", action="store_true", help="skip the market-breadth scan")
     train = sub.add_parser("train")
     train.add_argument("--variants", help="comma separated, default: all (" + ", ".join(pipeline.VARIANTS) + ")")
     train.add_argument("--years", help="comma separated test years to (re)train, default: all")
@@ -68,10 +71,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "report":
         report()
     elif args.command == "daily":
+        from .trading.signal import describe
         pipeline.do_fetch(cfg, paths)
-        info = pipeline.do_paper(cfg, paths, "step")
-        print(json.dumps(pipeline.as_jsonable(info), indent=1))
+        pipeline.do_paper(cfg, paths, "step")
+        result = pipeline.do_signal(cfg, paths, scan=not args.no_scan)
         report()
+        print(describe(result))
+    elif args.command == "signal":
+        from .trading.signal import describe
+        print(describe(pipeline.do_signal(cfg, paths, scan=False)))
     elif args.command == "run-all":
         pipeline.do_fetch(cfg, paths)
         pipeline.do_research(cfg, paths)

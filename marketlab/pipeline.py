@@ -88,11 +88,24 @@ def pred_path(paths: Paths, name: str) -> Path:
     return run_dir(paths) / f"pred_{name}.csv"
 
 
+def live_pred_path(paths: Paths) -> Path:
+    """Days predicted by the production model after its walk-forward run, one small file that
+    grows by a row a day (the walk-forward file itself only changes when the model is retrained)."""
+    return run_dir(paths) / f"pred_{MAIN}_live.csv"
+
+
 def read_pred(paths: Paths, name: str) -> pd.DataFrame | None:
     path = pred_path(paths, name)
     if not path.exists():
         return None
-    return pd.read_csv(path, index_col=0, parse_dates=True)
+    pred = pd.read_csv(path, index_col=0, parse_dates=True)
+    live = live_pred_path(paths)
+    if name == MAIN and live.exists():
+        extra = pd.read_csv(live, index_col=0, parse_dates=True)
+        extra = extra[extra.index > pred.index[-1]]  # a retrain supersedes older live rows
+        if len(extra):
+            pred = pd.concat([pred, extra])
+    return pred
 
 
 def attach_labels(pred: pd.DataFrame, bundle: PanelBundle, cfg: dict) -> pd.DataFrame:
@@ -253,8 +266,11 @@ def extend_predictions(cfg: dict, paths: Paths, bundle: PanelBundle) -> pd.DataF
         log.warning("the production model was trained for %s; a new year started, so retrain "
                     "(python -m marketlab train) to follow the yearly schedule", production["fold"])
     fresh = train.predict_production(production, bundle, after=pred.index[-1])
+    live = live_pred_path(paths)
+    previous = pd.read_csv(live, index_col=0, parse_dates=True) if live.exists() else None
+    stored = fresh if previous is None else pd.concat([previous[previous.index < fresh.index[0]], fresh])
+    stored.to_csv(live)
     pred = pd.concat([pred, fresh])
-    pred.to_csv(pred_path(paths, MAIN))
     log.info("predicted %d new day(s) up to %s", len(fresh), newest.date())
     return pred
 
@@ -274,6 +290,25 @@ def do_paper(cfg: dict, paths: Paths, action: str = "step", start: str | None = 
     info = paper.summary(state)
     log.info("paper account: %s", json.dumps(info, default=str))
     return info
+
+
+def do_signal(cfg: dict, paths: Paths, scan: bool = True) -> dict:
+    """Breadth scan (optional), then the plain-words decision for the next close."""
+    from .trading import signal as sig
+
+    breadth = None
+    if scan:
+        sig.run_scanner(paths)
+    breadth = sig.read_breadth(paths)
+    if breadth:
+        sig.save_breadth(paths, breadth)
+    state = paper.load_state(paths.state)
+    pred = read_pred(paths, MAIN)
+    if state is None or pred is None:
+        raise RuntimeError("no paper account or predictions yet: run train and paper init first")
+    result = sig.build_signal(state, pred, cfg, breadth)
+    sig.save_signal(paths, result)
+    return result
 
 
 def do_status(cfg: dict, paths: Paths) -> dict:

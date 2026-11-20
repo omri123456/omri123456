@@ -1,8 +1,9 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-# downloaded data is reproducible with: python -m marketlab fetch
-/data/
+# downloaded data is reproducible with: python -m marketlab fetch; parsed news events are kept
+/data/*
+!/data/events/
 /reports/
 # scratch runs and the bulky predictions of the comparison variants
 /runs/dev/
@@ -11,5 +12,6 @@ __pycache__/
 /runs/latest/pred_cnn_rules.csv
 /runs/latest/pred_linear_all.csv
 /runs/latest/equity_*.csv
+!/runs/latest/equity_full.csv
 # day-trader skills: the symbol list is rebuilt with `scan.py universe`
 /trader/universe.txt

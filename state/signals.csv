@@ -1,0 +1,2 @@
+date,instrument,decision,weight_now,weight_target,p_up,p_usual,score,horizon_days,equity
+2026-11-19,NASDAQ100,hold,1.0,1.0,0.6404,0.6114,0.39,5,97485.25
