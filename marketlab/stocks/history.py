@@ -122,6 +122,23 @@ def fetch(paths: Paths, *, max_age_hours: float = 12.0, pause: float = 0.5) -> d
                 failed.extend(batch)
             time.sleep(pause)
     closes, volumes = _to_frame(scan, data)
+    # Yahoo sometimes answers one batch from a stale cache: ask once more for any symbol that
+    # lacks the latest day the other symbols have.
+    if len(closes):
+        latest = closes.index.max()
+        behind = [s for s in closes.columns if pd.isna(closes.at[latest, s])]
+        retry: dict = {}
+        for i in range(0, len(behind), scan.SPARK_MAX):
+            batch = behind[i:i + scan.SPARK_MAX]
+            try:
+                time.sleep(pause)
+                retry.update(scan.parse_spark(scan.yahoo_get(scan.spark_path(batch, "5d", "1d")),
+                                              {scan.to_yahoo(s): s for s in batch}))
+            except Exception as exc:
+                log.warning("retry of stale symbols failed: %s", exc)
+        if retry:
+            fresh_c, fresh_v = _to_frame(scan, retry)
+            closes, volumes = fresh_c.combine_first(closes), fresh_v.combine_first(volumes)
     if old_closes is not None:
         closes = closes.combine_first(old_closes) if len(closes) else old_closes
         volumes = volumes.combine_first(old_volumes) if len(volumes) else old_volumes

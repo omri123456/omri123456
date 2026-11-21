@@ -9,6 +9,9 @@ project:
   start: "2004-01-01"        # first date kept in the feature panel
   target: NASDAQ100          # FRED id of the traded index (close only)
   wiki_start: "2003-01"      # first Current Events month to download
+  # FRED can post an index close a day or two late (after Fridays and holidays). Until it does,
+  # the same official close is taken from Yahoo (identical to FRED's once both have it).
+  provisional_closes: {NASDAQ100: "^NDX", NASDAQCOM: "^IXIC"}
 
 # ---------------------------------------------------------------------------------------------
 # FRED series. lag = delay between the observation date and availability:

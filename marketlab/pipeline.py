@@ -50,6 +50,11 @@ def load_bundle(cfg: dict, paths: Paths) -> tuple[store.RawData, PanelBundle]:
 # ---------------------------------------------------------------------------------------------
 def do_fetch(cfg: dict, paths: Paths) -> dict:
     summary = store.fetch_everything(cfg, paths)
+    try:
+        summary["provisional_closes"] = store.fetch_provisional(cfg, paths)
+    except Exception as exc:  # optional: FRED stays the source of record
+        summary["provisional_closes"] = f"failed: {exc}"
+        log.warning("provisional closes not fetched: %s", exc)
     try:  # NASDAQ-100 members' daily bars, through the day-trader skill's Yahoo client
         from .stocks import history
         summary["stocks"] = history.fetch(paths)
@@ -314,6 +319,9 @@ def do_signal(cfg: dict, paths: Paths, scan: bool = True) -> dict:
     if state is None or pred is None:
         raise RuntimeError("no paper account or predictions yet: run train and paper init first")
     result = sig.build_signal(state, pred, cfg, breadth)
+    raw, _ = load_bundle(cfg, paths)
+    target = cfg["project"]["target"]
+    result["provisional_close"] = result["date"] in raw.provisional.get(target, [])
     sig.save_signal(paths, result)
     return result
 

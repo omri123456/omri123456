@@ -165,5 +165,7 @@ def describe(signal: dict) -> str:
     if b:
         lines.append(f"רוחב שוק ({b['scanned']:,} מניות נזילות, סגירת {b['as_of']}): "
                      f"{b['pct']['oversold']}% במכירת יתר, {b['pct']['breakout_20d']}% בפריצה לשיא 20 יום.")
+    if signal.get("provisional_close"):
+        lines.append("מחיר הסגירה של היום הזה זמני (Yahoo); FRED עוד לא פרסם אותו.")
     lines.append("זה פלט של ניסוי, לא ייעוץ השקעות; המודל לא הוכח כטוב יותר מקנה-והחזק.")
     return "\n".join(lines)

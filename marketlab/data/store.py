@@ -27,6 +27,7 @@ class RawData:
     fomc: pd.DataFrame | None = None
     events: pd.DataFrame | None = None  # columns: date, category, text
     stock_closes: pd.DataFrame | None = None  # NASDAQ-100 members, daily closes (dates x symbols)
+    provisional: dict[str, list[str]] = field(default_factory=dict)  # series -> dates filled from Yahoo
 
     def truncate(self, last_date) -> "RawData":
         """Copy of the bundle without any observation dated after last_date (for leak tests)."""
@@ -142,6 +143,37 @@ def fetch_everything(cfg: dict, paths: Paths, *, max_age_hours: float | None = 1
     return summary
 
 
+def provisional_path(paths: Paths) -> Path:
+    return paths.fred / "provisional_closes.csv"
+
+
+def fetch_provisional(cfg: dict, paths: Paths) -> dict:
+    """Closes of the last few sessions from Yahoo for the series FRED may post late."""
+    wanted = cfg["project"].get("provisional_closes") or {}
+    if not wanted:
+        return {}
+    from ..stocks.history import _scanner  # the day-trader skill's Yahoo client
+    scan = _scanner(paths)
+    data = scan.parse_spark(scan.yahoo_get(scan.spark_path(list(wanted.values()), "5d", "1d")))
+    rows = []
+    for sid, symbol in wanted.items():
+        series = data.get(symbol) or data.get(symbol.lstrip("^")) or {}
+        closes = {}
+        for ts, close in zip(series.get("t", []), series.get("c", [])):
+            if ts is not None and close is not None:
+                closes[str(scan.ts_to_eastern(ts).date())] = float(close)  # one bar a day; a late tick wins
+        # only finished sessions: the bar of a day that is still trading is not a close
+        now = scan.to_eastern(pd.Timestamp.now(tz="UTC").to_pydatetime())
+        session = scan.session(now.date())
+        for day, close in closes.items():
+            if day == str(now.date()) and session is not None and now.time() < session[1]:
+                continue
+            rows.append({"series": sid, "date": day, "close": close})
+    frame = pd.DataFrame(rows, columns=["series", "date", "close"])
+    frame.to_csv(provisional_path(paths), index=False)
+    return {sid: frame.loc[frame["series"] == sid, "date"].max() for sid in wanted}
+
+
 def load_raw(cfg: dict, paths: Paths) -> RawData:
     raw = RawData()
     stock_file = paths.raw / "stocks" / "closes.csv.gz"
@@ -153,6 +185,16 @@ def load_raw(cfg: dict, paths: Paths) -> RawData:
             raw.fred[sid] = series
         else:
             log.warning("FRED series %s is not in the cache; features that need it are skipped", sid)
+    if provisional_path(paths).exists():
+        extra = pd.read_csv(provisional_path(paths), parse_dates=["date"])
+        for sid, part in extra.groupby("series"):
+            if sid not in raw.fred:
+                continue
+            newer = part[part["date"] > raw.fred[sid].index.max()]
+            if len(newer):  # FRED has not posted these days yet
+                add = pd.Series(newer["close"].to_numpy(float), index=pd.DatetimeIndex(newer["date"]), name=sid)
+                raw.fred[sid] = pd.concat([raw.fred[sid], add]).sort_index()
+                raw.provisional[sid] = [str(d.date()) for d in add.index]
     raw.sentiment = _safe(indices.load_news_sentiment, paths.misc / "news_sentiment.xlsx")
     raw.gpr = _safe(indices.load_gpr, paths.misc / "gpr_daily.xls")
     raw.spf = _safe(spf.load_spf, paths.misc / "spf_meanlevel.xlsx")
