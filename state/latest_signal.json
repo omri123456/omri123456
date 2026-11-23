@@ -19,21 +19,21 @@
  },
  "breadth": {
   "as_of": "2026-11-20",
-  "scanned": 1603,
+  "scanned": 1619,
   "universe": 5924,
   "counts": {
-   "oversold": 304,
+   "oversold": 307,
    "oversold_bounce": 16,
    "breakout_20d": 12,
-   "bull_flag": 37,
-   "reclaim_ma20": 23
+   "bull_flag": 38,
+   "reclaim_ma20": 24
   },
   "pct": {
    "oversold": 19.0,
    "oversold_bounce": 1.0,
    "breakout_20d": 0.7,
    "bull_flag": 2.3,
-   "reclaim_ma20": 1.4
+   "reclaim_ma20": 1.5
   },
   "top": [
    {
