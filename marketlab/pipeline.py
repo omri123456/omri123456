@@ -57,7 +57,7 @@ def do_fetch(cfg: dict, paths: Paths) -> dict:
         log.warning("provisional closes not fetched: %s", exc)
     try:  # NASDAQ-100 members' daily bars, through the day-trader skill's Yahoo client
         from .stocks import history
-        summary["stocks"] = history.fetch(paths)
+        summary["stocks"] = history.fetch(paths, max_age_hours=2.0)
     except Exception as exc:  # optional: the index model does not need it
         summary["stocks"] = f"failed: {exc}"
         log.warning("stock history not refreshed: %s", exc)

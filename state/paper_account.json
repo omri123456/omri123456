@@ -7,8 +7,8 @@
   "cost_bps": 5.0,
   "borrow_spread": 1.0,
   "units": 3.6763232210826846,
-  "last_price": 25028.98,
-  "last_date": "2026-11-20",
+  "last_price": 26746.096,
+  "last_date": "2026-11-23",
   "trades": [
    {
     "date": "2026-11-16",
@@ -26,9 +26,9 @@
   "interest_earned": 35.50684931506849
  },
  "pending": {
-  "decided_on": "2026-11-20",
+  "decided_on": "2026-11-23",
   "target_weight": 1.0,
-  "p_up": 0.648,
+  "p_up": 0.6278,
   "horizon": 5
  },
  "history": [
@@ -84,7 +84,16 @@
    "cash": 0.0,
    "traded": false,
    "filled_decision": "2026-11-19"
+  },
+  {
+   "date": "2026-11-23",
+   "equity": 98327.29379810671,
+   "weight": 1.0,
+   "price": 26746.096,
+   "cash": 0.0,
+   "traded": false,
+   "filled_decision": "2026-11-20"
   }
  ],
- "processed_days": 0
+ "processed_days": 1
 }

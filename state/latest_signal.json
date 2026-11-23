@@ -1,137 +1,136 @@
 {
- "date": "2026-11-20",
+ "date": "2026-11-23",
  "instrument": "NASDAQ100",
  "decision": "hold",
  "decision_he": "החזק / חכה: בלי שינוי",
  "weight_now": 1.0,
  "weight_target": 1.0,
- "p_up": 0.648,
- "p_usual": 0.6113,
- "score": 0.5,
+ "p_up": 0.6278,
+ "p_usual": 0.6112,
+ "score": 0.22,
  "horizon_days": 5,
  "executes_at": "סגירת יום המסחר הבא",
  "account": {
-  "equity": 92014.62,
-  "return_pct": -7.985,
-  "index_return_pct": -10.431,
+  "equity": 98327.29,
+  "return_pct": -1.673,
+  "index_return_pct": -4.286,
   "trades": 1,
-  "last_mark": "2026-11-20"
+  "last_mark": "2026-11-23"
  },
  "breadth": {
-  "as_of": "2026-11-20",
-  "scanned": 1619,
+  "as_of": "2026-11-23",
+  "scanned": 1491,
   "universe": 5924,
   "counts": {
-   "oversold": 307,
-   "oversold_bounce": 16,
-   "breakout_20d": 12,
-   "bull_flag": 38,
-   "reclaim_ma20": 24
+   "oversold": 81,
+   "oversold_bounce": 253,
+   "breakout_20d": 51,
+   "bull_flag": 31,
+   "reclaim_ma20": 169
   },
   "pct": {
-   "oversold": 19.0,
-   "oversold_bounce": 1.0,
-   "breakout_20d": 0.7,
-   "bull_flag": 2.3,
-   "reclaim_ma20": 1.5
+   "oversold": 5.4,
+   "oversold_bounce": 17.0,
+   "breakout_20d": 3.4,
+   "bull_flag": 2.1,
+   "reclaim_ma20": 11.3
   },
   "top": [
    {
     "symbol": "NVDA",
     "setups": [
-     "oversold"
+     "oversold_bounce"
     ],
-    "price": 125.53,
-    "rsi": 15.2
+    "price": 165.05,
+    "rsi": 43.0
    },
    {
     "symbol": "MU",
     "setups": [
-     "oversold"
+     "oversold_bounce"
     ],
-    "price": 594.51,
-    "rsi": 29.4
+    "price": 707.7,
+    "rsi": 42.5
+   },
+   {
+    "symbol": "AAPL",
+    "setups": [
+     "reclaim_ma20"
+    ],
+    "price": 349.08,
+    "rsi": 52.8
+   },
+   {
+    "symbol": "TSLA",
+    "setups": [
+     "reclaim_ma20"
+    ],
+    "price": 385.46,
+    "rsi": 52.1
    },
    {
     "symbol": "GOOGL",
     "setups": [
-     "oversold"
+     "oversold_bounce"
     ],
-    "price": 265.29,
-    "rsi": 27.7
+    "price": 282.1,
+    "rsi": 40.9
+   },
+   {
+    "symbol": "TSM",
+    "setups": [
+     "oversold_bounce"
+    ],
+    "price": 363.6,
+    "rsi": 43.1
    },
    {
     "symbol": "SNDK",
     "setups": [
      "oversold"
     ],
-    "price": 94.39,
-    "rsi": 29.1
-   },
-   {
-    "symbol": "TSM",
-    "setups": [
-     "oversold"
-    ],
-    "price": 318.71,
-    "rsi": 28.3
+    "price": 87.71,
+    "rsi": 27.3
    },
    {
     "symbol": "INTC",
     "setups": [
-     "oversold"
+     "oversold_bounce"
     ],
-    "price": 51.28,
-    "rsi": 28.1
+    "price": 59.66,
+    "rsi": 40.1
    },
    {
     "symbol": "GOOG",
     "setups": [
-     "oversold"
+     "oversold_bounce"
     ],
-    "price": 264.0,
-    "rsi": 26.8
+    "price": 279.53,
+    "rsi": 40.2
    },
    {
-    "symbol": "PLTR",
+    "symbol": "DELL",
     "setups": [
-     "oversold"
+     "oversold_bounce"
     ],
-    "price": 143.49,
-    "rsi": 26.2
+    "price": 334.91,
+    "rsi": 41.7
    },
    {
     "symbol": "MRVL",
     "setups": [
-     "oversold"
-    ],
-    "price": 122.28,
-    "rsi": 27.7
-   },
-   {
-    "symbol": "UNH",
-    "setups": [
-     "oversold",
      "oversold_bounce"
     ],
-    "price": 339.85,
-    "rsi": 29.8
+    "price": 144.74,
+    "rsi": 38.5
    },
    {
-    "symbol": "ASML",
+    "symbol": "PLTR",
     "setups": [
-     "oversold"
+     "oversold_bounce"
     ],
-    "price": 1266.22,
-    "rsi": 28.7
-   },
-   {
-    "symbol": "NBIS",
-    "setups": [
-     "oversold"
-    ],
-    "price": 81.31,
-    "rsi": 28.4
+    "price": 159.36,
+    "rsi": 41.6
    }
   ]
  },
